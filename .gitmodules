@@ -1,0 +1,3 @@
+[submodule "3rdparty/ConfigReader"]
+	path = 3rdparty/ConfigReader
+	url = git@github.com:ConstantRobotics-Ltd/ConfigReader.git
