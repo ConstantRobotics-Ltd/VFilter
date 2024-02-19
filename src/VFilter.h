@@ -1,6 +1,7 @@
 #include <string>
 #include <cstdint>
 #include "ConfigReader.h"
+#include "Frame.h"
 
 
 
@@ -13,6 +14,10 @@ namespace video
  */
 struct VFilterParamsMask
 {
+    bool mode{ true };
+    bool level{ true };
+    bool processingTimeMcSec{ true };
+    bool type{ true };
     bool custom1{ true };
     bool custom2{ true };
     bool custom3{ true };
@@ -31,7 +36,7 @@ public:
     /// 0% to 100%.
     int level{ 0 };
     /// Processing time in microseconds. Read only parameter.
-    int processingTimeMcSec{ 0.0f };
+    int processingTimeMcSec{ 0 };
     /// Type of the filter. Depends on the implementation.
     int type{ 0 };
     /// VFilter custom parameter. Custom parameters used when particular image 
@@ -45,7 +50,7 @@ public:
     float custom3{ 0.0f };
 
     /// Macro from ConfigReader to make params readable/writable from JSON.
-    JSON_READABLE(mode, level, processingTimeMcSec, type,
+    JSON_READABLE(VFilterParams, mode, level, processingTimeMcSec, type,
         custom1, custom2, custom3)
 
     /// operator =
@@ -104,7 +109,6 @@ enum class VFilterParam
  */
 enum class VFilterCommand
 {
-
     /// Restart Pan-Tilt device.
     RESTART = 1,
     /// Stop Pan-Tilt device, block all running commands and left device in current state.
@@ -157,8 +161,14 @@ public:
      * @param arg2 The argument value used by the command.
      * @return TRUE if the command was executed successfully, FALSE otherwise.
      */
-    virtual bool executeCommand(VFilterCommand id,
-                                      float arg1 = 0.0f, float arg2 = 0.0f) = 0;
+    virtual bool executeCommand(VFilterCommand id) = 0;
+
+    /**
+	 * @brief Process frame.
+	 * @param frame Reference to frame.
+	 * @return TRUE if frame processed or FALSE if not.
+	 */
+    virtual bool processFrame(cr::video::Frame& frame) = 0;
 
     /**
      * @brief Encode set param command.
@@ -178,8 +188,7 @@ public:
      * @param arg1 The argument value used by the command.
      * @param arg2 The argument value used by the command.
      */
-    static void encodeCommand(uint8_t* data, int& size, VFilterCommand id, 
-                                        float arg1 = 0.0f, float arg2 = 0.0f);
+    static void encodeCommand(uint8_t* data, int& size, VFilterCommand id);
 
     /**
      * @brief Decode command.

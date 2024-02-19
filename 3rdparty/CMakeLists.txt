@@ -31,6 +31,12 @@ if (${PARENT}_SUBMODULE_CONFIG_READER)
     SET(${PARENT}_CONFIG_READER_EXAMPLES                OFF CACHE BOOL "" FORCE)
 endif()
 
+SET(${PARENT}_SUBMODULE_FRAME                           ON  CACHE BOOL "" FORCE)
+if (${PARENT}_SUBMODULE_FRAME)
+    SET(${PARENT}_FRAME                                 ON  CACHE BOOL "" FORCE)
+    SET(${PARENT}_FRAME_TEST                            OFF CACHE BOOL "" FORCE)
+endif()
+
 
 
 ################################################################################
@@ -39,4 +45,8 @@ endif()
 ################################################################################
 if (${PARENT}_SUBMODULE_CONFIG_READER)
     add_subdirectory(ConfigReader)
+endif()
+
+if (${PARENT}_SUBMODULE_FRAME)
+    add_subdirectory(Frame)
 endif()
