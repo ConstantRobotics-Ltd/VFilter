@@ -109,9 +109,9 @@ enum class VFilterParam
  */
 enum class VFilterCommand
 {
-    /// Restart Pan-Tilt device.
+    /// Restart image filter algorithm.
     RESTART = 1,
-    /// Stop Pan-Tilt device, block all running commands and left device in current state.
+    /// Stop applying image filter in current pipeline.
     STOP
 };
 
@@ -199,11 +199,8 @@ public:
      * @param value Param or command value.
      * @return 0 - command decoded, 1 - set param command decoded, -1 - error.
      */
-    static int decodeCommand(uint8_t* data,
-        int size,
-        VFilterParam& paramId,
-        VFilterCommand& commandId,
-        float& value);
+    static int decodeCommand(uint8_t* data, int size, VFilterParam& paramId,
+                                    VFilterCommand& commandId, float& value);
 
     /**
      * @brief Decode and execute command.
