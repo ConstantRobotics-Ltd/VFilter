@@ -1,5 +1,6 @@
 #include "VFilter.h"
 #include "VFilterVersion.h"
+#include <cstring>
 
 
 
@@ -48,13 +49,36 @@ bool cr::video::VFilterParams::encode(uint8_t* data, int bufferSize, int& size,
 
     pos += 1;
 	data[pos] = 0x00;
-    data[pos] = data[pos] | (paramsMask.custom1 ? (uint8_t)128 : (uint8_t)0);
-    data[pos] = data[pos] | (paramsMask.custom2 ? (uint8_t)64 : (uint8_t)0);
-    data[pos] = data[pos] | (paramsMask.custom3 ? (uint8_t)32 : (uint8_t)0);
+	data[pos] = data[pos] | (paramsMask.mode ? (uint8_t)128 : (uint8_t)0);
+	data[pos] = data[pos] | (paramsMask.level ? (uint8_t)64 : (uint8_t)0);
+	data[pos] = data[pos] | (paramsMask.processingTimeMcSec ? (uint8_t)32 : (uint8_t)0);
+	data[pos] = data[pos] | (paramsMask.type ? (uint8_t)16 : (uint8_t)0);
+    data[pos] = data[pos] | (paramsMask.custom1 ? (uint8_t)8 : (uint8_t)0);
+    data[pos] = data[pos] | (paramsMask.custom2 ? (uint8_t)4 : (uint8_t)0);
+    data[pos] = data[pos] | (paramsMask.custom3 ? (uint8_t)2 : (uint8_t)0);
     pos += 1;
 
 	// Copy params to buffer.
-	
+	if (paramsMask.mode)
+	{
+		memcpy(&data[pos], &mode, sizeof(mode));
+		pos += sizeof(mode);
+	}
+	if (paramsMask.level)
+	{
+		memcpy(&data[pos], &level, sizeof(level));
+		pos += sizeof(level);
+	}
+	if (paramsMask.processingTimeMcSec)
+	{
+		memcpy(&data[pos], &processingTimeMcSec, sizeof(processingTimeMcSec));
+		pos += sizeof(processingTimeMcSec);
+	}
+	if (paramsMask.type)
+	{
+		memcpy(&data[pos], &type, sizeof(type));
+		pos += sizeof(type);
+	}
 	if (paramsMask.custom1)
 	{
 		memcpy(&data[pos], &custom1, sizeof(custom1));
@@ -97,8 +121,59 @@ bool cr::video::VFilterParams::decode(uint8_t* data, int dataSize)
 
 	// Decode params.
 	int pos = 5;
-   
-	if ((data[4] & (uint8_t)128) == (uint8_t)128)
+   	if ((data[4] & (uint8_t)128) == (uint8_t)128)
+	{
+		if (dataSize < pos + sizeof(mode))
+		{
+			return false;
+		}
+		memcpy(&mode, &data[pos], sizeof(mode));
+		pos += sizeof(mode);
+	}
+	else
+	{
+		mode = 0;
+	}
+	if ((data[4] & (uint8_t)64) == (uint8_t)64)
+	{
+		if (dataSize < pos + sizeof(level))
+		{
+			return false;
+		}
+		memcpy(&level, &data[pos], sizeof(level));
+		pos += sizeof(level);
+	}
+	else
+	{
+		level = 0;
+	}
+	if ((data[4] & (uint8_t)32) == (uint8_t)32)
+	{
+		if (dataSize < pos + sizeof(processingTimeMcSec))
+		{
+			return false;
+		}
+		memcpy(&processingTimeMcSec, &data[pos], sizeof(processingTimeMcSec));
+		pos += sizeof(processingTimeMcSec);
+	}
+	else
+	{
+		processingTimeMcSec = 0;
+	}
+	if ((data[4] & (uint8_t)16) == (uint8_t)16)
+	{
+		if (dataSize < pos + sizeof(type))
+		{
+			return false;
+		}
+		memcpy(&type, &data[pos], sizeof(type));
+		pos += sizeof(type);
+	}
+	else
+	{
+		type = 0;
+	}
+	if ((data[4] & (uint8_t)8) == (uint8_t)8)
 	{
 		if (dataSize < pos + sizeof(custom1))
 		{
@@ -111,7 +186,7 @@ bool cr::video::VFilterParams::decode(uint8_t* data, int dataSize)
 	{
 		custom1 = 0.0f;
 	}
-	if ((data[4] & (uint8_t)64) == (uint8_t)64)
+	if ((data[4] & (uint8_t)4) == (uint8_t)4)
 	{
 		if (dataSize < pos + sizeof(custom2))
 		{
@@ -124,7 +199,7 @@ bool cr::video::VFilterParams::decode(uint8_t* data, int dataSize)
 	{
 		custom2 = 0.0f;
 	}
-	if ((data[4] & (uint8_t)32) == (uint8_t)32)
+	if ((data[4] & (uint8_t)2) == (uint8_t)2)
 	{
 		if (dataSize < pos + sizeof(custom3))
 		{
@@ -175,7 +250,7 @@ void cr::video::VFilter::encodeSetParamCommand(
 
 
 void cr::video::VFilter::encodeCommand(uint8_t* data, int& size,
-	VFilterCommand id, float arg1, float arg2)
+	VFilterCommand id)
 {
 	// Fill header.
 	data[0] = 0x00;
@@ -185,9 +260,7 @@ void cr::video::VFilter::encodeCommand(uint8_t* data, int& size,
 	// Fill data.
 	int commandId = (int)id;
 	memcpy(&data[3], &commandId, 4);
-	memcpy(&data[7], &arg1, 4);
-	memcpy(&data[11], &arg2, 4);
-	size = 15;
+	size = 7;
 }
 
 
