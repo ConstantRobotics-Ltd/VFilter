@@ -43,4 +43,4 @@ endif()
 ## LINK LIBRARIES
 ## linking all dependencies
 ################################################################################
-target_link_libraries(${PROJECT_NAME} PanTilt)
+target_link_libraries(${PROJECT_NAME} VFilter)
