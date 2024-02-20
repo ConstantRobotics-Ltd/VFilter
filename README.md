@@ -2,7 +2,7 @@
 
 
 
-# **VFilterC++ library**
+# **VFilter C++ interface library**
 
 **v1.0.0**
 
@@ -28,7 +28,7 @@
   - [VFilterCommand enum](#VFilterCommand-enum)
   - [VFilterParam enum](#VFilterParam-enum)
 - [VFilterParams class description](#VFilterParams-class-description)
-  - [Class declaration](#Class-declaration)
+  - [Class declaration](#Class--declaration)
   - [Serialize VFilter params](#Serialize-VFilter-params)
   - [Deserialize VFilter params](#Deserialize-VFilter-params)
   - [Read params from JSON file and write to JSON file](#Read-params-from-JSON-file-and-write-to-JSON-file)
@@ -39,36 +39,45 @@
 
 # Overview
 
-**VFilter** is a C++ library designed to serve as a standard interface for various video filters (image processing algorithms). The library defines interface and data structures for video filters. The library provides methods to encode/decode commands and encode/decode parameters. **VFilter.h** file contains list of data structures (**[VFilterCommand enum](#VFilterCommand-enum)**, **[VFilterParam enum](#VFilterParam-enum)** and **VFilterParams class**) and **VFilter** class declaration. **VFilter** interface depends on **[ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader)** library to provide methods to read/write JSON config files.
+The **VFilter** C++ library provides interface as well defines data structures for various video filters implementation. The **VFilter** interface represents video filter module which has video frames as input and output. The **VFilter.h** file contains declaration of data structures: [VFilterCommand](#VFilterCommand-enum) enum, [VFilterParam](#VFilterParam-enum) enum, [VFilterParams](#Class--declaration) class and [VFilter](#Class-declaration) class declaration. The library depends on [Frame](https://github.com/ConstantRobotics-Ltd/Frame) library (describes data structures for video frames, Apache 2.0 license) and [ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader) library (provides methods to read/write JSON config files, Apache 2.0 license). The library uses C++17 standard and doesn't have third-party dependencies to be installed in OS.
+
+
 
 # Versions
 
 **Table 1** - Library versions.
 
-| Version | Release date | What's new                          |
-| ------- | ------------ | ----------------------------------- |
-| 1.0.0   | 19.02.2024   | - First version of VFilter library. |
+| Version | Release date | What's new                    |
+| ------- | ------------ | ----------------------------- |
+| 1.0.0   | 20.02.2024   | First version of the library. |
 
 
 
 # Library files
 
-The **VFilter** is a CMake project. Library files:
+The library supplied by source code only. The user would be given a set of files in the form of a CMake project (repository). The repository structure is shown below:
 
 ```xml
 CMakeLists.txt ------------------- Main CMake file of the library.
 3rdparty ------------------------- Folder with third-party libraries.
     CMakeLists.txt --------------- CMake file which includes third-party libraries.
     ConfigReader ----------------- Source code of the ConfigReader library.
-test ----------------------------- Folder for internal tests of library.
-    CMakeLists.txt --------------- CMake file for tests application.
-    main.cpp --------------------- Source code file tests application.
+    Frame ------------------------ Source code of the Frame library.
 src ------------------------------ Folder with source code of the library.
     CMakeLists.txt --------------- CMake file of the library.
     VFilter.cpp ------------------ Source code file of the library.
     VFilter.h -------------------- Header file which includes VFilter class declaration.
     VFilterVersion.h ------------- Header file which includes version of the library.
     VFilterVersion.h.in ---------- CMake service file to generate version file.
+test ----------------------------- Folder for internal tests of library.
+    CMakeLists.txt --------------- CMake file for tests application.
+    main.cpp --------------------- Source code file tests application.
+src ------------------------------ Folder with source code of the custom VFilter implementation.
+    CMakeLists.txt --------------- CMake file of the library.
+    CustomVFilter.cpp ------------ Source code file of the library.
+    CustomVFilter.h -------------- Header file which includes CustomVFilter class declaration.
+    CustomVFilterVersion.h ------- Header file which includes version of the library.
+    CustomVFilterVersion.h.in ---- CMake service file to generate version file.
 ```
 
 
@@ -85,36 +94,40 @@ src ------------------------------ Folder with source code of the library.
 class VFilter
 {
 public:
-   
-    // Class virtual destructor.
+
+    /// Class destructor.
     virtual ~VFilter();
 
-    // Get the version of the VFilter class.
+    /// Get the version of the VFilter class.
     static std::string getVersion();
-    
-	// Set the value for a specific library parameter.
+
+    /// Set the value for a specific library parameter.
     virtual bool setParam(VFilterParam id, float value) = 0;
 
-	// Get the value of a specific library parameter.
+    /// Get the value of a specific library parameter.
     virtual float getParam(VFilterParam id) = 0;
 
-	// Get the structure containing all library parameters.
+    /// Get the structure containing all library parameters.
     virtual void getParams(VFilterParams& params) = 0;
 
-	// Execute a VFilter command.
+    /// Execute a VFilter action command.
     virtual bool executeCommand(VFilterCommand id) = 0;
 
-	// Encode set param command.
-    static void encodeSetParamCommand(uint8_t* data, int& size, VFilterParam id,
-                                      							float value);
-	// Encode command.
-	static void encodeCommand(uint8_t* data, int& size, VFilterCommand id);
+    /// Process frame.
+    virtual bool processFrame(cr::video::Frame& frame) = 0;
 
-	// Decode command.
-	static int decodeCommand(uint8_t* data, int size, VFilterParam& paramId,
-                                VFilterCommand& commandId, float& value);
+    /// Encode set param command.
+    static void encodeSetParamCommand(uint8_t* data, int& size,
+                                      VFilterParam id, float value);
 
-	// Decode and execute command.
+    /// Encode command.
+    static void encodeCommand(uint8_t* data, int& size, VFilterCommand id);
+
+    /// Decode command.
+    static int decodeCommand(uint8_t* data, int size, VFilterParam& paramId,
+                                    VFilterCommand& commandId, float& value);
+
+    /// Decode and execute command.
     virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
 };
 ```
@@ -123,7 +136,7 @@ public:
 
 ## getVersion method
 
-**getVersion()** method returns string of current class version. Method declaration:
+The **getVersion()** static method returns string of current class version. Method declaration:
 
 ```cpp
 static std::string getVersion();
@@ -172,7 +185,7 @@ virtual float getParam(VFilterParam id) = 0;
 | --------- | ------------------------------------------------------------ |
 | id        | Parameter ID according to [VFilterParam](#VFilterParam-enum) enum. |
 
-**Returns:** parameter value or **-1** if the parameters doesn't exist.
+**Returns:** parameter value or **-1** if the parameters doesn't exist (not supported in particular implementation).
 
 
 
@@ -192,7 +205,7 @@ virtual void getParams(VFilterParams& params) = 0;
 
 ## executeCommand method
 
-**executeCommand(...)** method executes library command. **VFilter** based library should provide thread-safe **executeCommand(...)** method call. This means that the **executeCommand(...)** method can be safely called from any thread. Method declaration:
+**executeCommand(...)** method executes library action command. **VFilter** based library should provide thread-safe **executeCommand(...)** method call. This means that the **executeCommand(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual bool executeCommand(VFilterCommand id) = 0;
@@ -208,7 +221,7 @@ virtual bool executeCommand(VFilterCommand id) = 0;
 
 ## encodeSetParamCommand method
 
-**encodeSetParamCommand(...)** static method encodes command to change any **VFilter** parameter value. To control any image filter remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **VFilter** class contains static methods for encoding the control command. The **VFilter** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeSetParamCommand(...)** designed to encode SET_PARAM command. Method declaration:
+**encodeSetParamCommand(...)** static method encodes command to change any **VFilter** parameter value. To control any video filter remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **VFilter** class contains static methods for encoding the control command. The **VFilter** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeSetParamCommand(...)** designed to encode SET_PARAM command. Method declaration:
 
 ```cpp
 static void encodeSetParamCommand(uint8_t* data, int& size, VFilterParam id, float value);
@@ -218,7 +231,7 @@ static void encodeSetParamCommand(uint8_t* data, int& size, VFilterParam id, flo
 | --------- | ------------------------------------------------------------ |
 | data      | Pointer to data buffer for encoded command. Must have size >= 11. |
 | size      | Size of encoded data. Will be 11 bytes.                      |
-| id        | Parameter ID according to [**VFilterParam enum**](#VFilterParam-enum). |
+| id        | Parameter ID according to [VFilterParam](#VFilterParam-enum) enum. |
 | value     | Parameter value.                                             |
 
 **SET_PARAM** command format:
@@ -254,20 +267,17 @@ VFilter::encodeSetParamCommand(data, size, VFilterParam::LEVEL, outValue);
 
 ## encodeCommand method
 
-**encodeCommand(...)** static method encodes command for **VFilter** remote control. To control any image filter remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **VFilter** class contains static methods for encoding the control command. The **VFilter** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeCommand(...)** designed to encode COMMAND command (action command). Method declaration:
+**encodeCommand(...)** static method encodes command for **VFilter** remote control. To control any video filter remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **VFilter** class contains static methods for encoding the control command. The **VFilter** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeCommand(...)** designed to encode COMMAND command (action command). Method declaration:
 
 ```cpp
-static void cr::video::VFilter::encodeCommand(uint8_t* data, int& size,
-                       VFilterCommand id, float arg1 = 0.0f, float arg2 = 0.0f);
+static void encodeCommand(uint8_t* data, int& size, VFilterCommand id);
 ```
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| data      | Pointer to data buffer for encoded command. Must have size >= 15. |
-| size      | Size of encoded data. Will be 15 bytes.                      |
-| id        | Command ID according to [**VFilterCommand enum**](#VFilterCommand-enum). |
-| arg1      | Command argument 1 value (value depends on command ID).      |
-| arg2      | Command argument 2 value (value depends on command ID).      |
+| data      | Pointer to data buffer for encoded command. Must have size >= 7. |
+| size      | Size of encoded data. Will be 7 bytes.                       |
+| id        | Command ID according to [VFilterCommand](#VFilterCommand-enum) enum. |
 
 **COMMAND** format:
 
@@ -306,8 +316,8 @@ static int decodeCommand(uint8_t* data, int size, VFilterParam& paramId, VFilter
 | --------- | ------------------------------------------------------------ |
 | data      | Pointer to input command.                                    |
 | size      | Size of command. Must be 11 bytes for SET_PARAM and 7 bytes for COMMAND. |
-| paramId   | VFilter parameter ID according to [**VFilterParam enum**](#VFilterParam-enum). After decoding SET_PARAM command the method will return parameter ID. |
-| commandId | VFilter command ID according to [**VFilterCommand enum**](#VFilterCommand-enum). After decoding COMMAND the method will return command ID. |
+| paramId   | VFilter parameter ID according to [VFilterParam](#VFilterParam-enum) enum. After decoding SET_PARAM command the method will return parameter ID. |
+| commandId | VFilter command ID according to [VFilterCommand](#VFilterCommand-enum) enum. After decoding COMMAND the method will return command ID. |
 | value     | VFilter parameter value (after decoding SET_PARAM command).  |
 
 **Returns:** **0** - in case decoding COMMAND, **1** - in case decoding SET_PARAM command or **-1** in case errors.
@@ -316,7 +326,7 @@ static int decodeCommand(uint8_t* data, int size, VFilterParam& paramId, VFilter
 
 ## decodeAndExecuteCommand method
 
-**decodeAndExecuteCommand(...)** method decodes and executes command on image filter side. The particular implementation of the VFilter must provide thread-safe **decodeAndExecuteCommand(...)** method call. This means that the **decodeAndExecuteCommand(...)** method can be safely called from any thread. Method declaration:
+**decodeAndExecuteCommand(...)** method decodes and executes command encoded by [encodeSetParamCommand(...)](#encodeSetParamCommand-method) and [encodeCommand(...)](#encodeCommand-method) methods on video filter side. The particular implementation of the VFilter must provide thread-safe **decodeAndExecuteCommand(...)** method call. This means that the **decodeAndExecuteCommand(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
@@ -328,6 +338,8 @@ virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
 | size      | Size of command. Must be 11 bytes for SET_PARAM or 7 bytes for COMMAND. |
 
 **Returns:** TRUE if command decoded (SET_PARAM or COMMAND) and executed (action command or set param command).
+
+
 
 # Data structures
 
@@ -342,17 +354,20 @@ enum class VFilterCommand
 {
     /// Restart image filter algorithm.
     RESTART = 1,
-    /// Stop applying image filter in current pipeline.
-    STOP
+    /// Enable filter.
+    ON,
+    /// Disable filter.
+    OFF
 };
 ```
 
-**Table 2** - Commands description.
+**Table 2** - Action commands description.
 
-| Command                 | Description                                                  |
-| ----------------------- | ------------------------------------------------------------ |
-| RESTART                 | Restart image filter algorithm.      |
-| STOP                    | Stop applying image filter in current pipeline. |
+| Command | Description                     |
+| ------- | ------------------------------- |
+| RESTART | Restart image filter algorithm. |
+| ON      | Enable video filter.            |
+| OFF     | Disable video filter.           |
 
 
 
@@ -388,10 +403,13 @@ enum class VFilterParam
 
 | Parameter             | Access       | Description                                                  |
 | --------------------- | ------------ | ------------------------------------------------------------ |
-| MODE                  | read / write | Current filter mode, usually 0 - off, 1 - on.                |
-| LEVEL                 | read / write | Enhancement level for particular filter, as a percentage in range from 0% to 100%. |
-| PROCESSING_TIME_MCSEC | read only    | Processing time in microseconds. Read only parameter.        |
+| MODE                  | read / write | Current filter mode, usually 0 - off, 1 - on (typical). Can have another meaning depends on implementation. |
+| LEVEL                 | read / write | Enhancement level for particular filter, as a percentage in range from 0% to 100% (typical). Can have another meaning depends on implementation. The video filter should keep this value in memory. After enable video filter this value should be implemented. |
+| PROCESSING_TIME_MCSEC | read only    | Processing time in microseconds. Read only parameter. Used to control performance of video filter. |
 | TYPE                  | read / write | Type of the filter. Depends on the implementation.           |
+| CUSTOM_1              | read / write | VFilter custom parameter. Custom parameters used when particular image filter has specific unusual parameter. |
+| CUSTOM_2              | read / write | VFilter custom parameter. Custom parameters used when particular image filter has specific unusual parameter. |
+| CUSTOM_3              | read / write | VFilter custom parameter. Custom parameters used when particular image filter has specific unusual parameter. |
 
 
 
@@ -399,7 +417,7 @@ enum class VFilterParam
 
 
 
-## Class declaration
+## Class  declaration
 
 **VFilterParams** class is used to provide video filter parameters structure. Also **VFilterParams** provides possibility to write/read params from JSON files (**JSON_READABLE** macro) and provides methods to encode and decode params. **VFilterParams** interface class declared in **VFilter.h** file. Class declaration:
 
@@ -428,7 +446,7 @@ public:
 
     /// Macro from ConfigReader to make params readable/writable from JSON.
     JSON_READABLE(VFilterParams, mode, level, processingTimeMcSec, type,
-        custom1, custom2, custom3)
+                  custom1, custom2, custom3)
 
     /// operator =
     VFilterParams& operator= (const VFilterParams& src);
@@ -445,9 +463,9 @@ public:
 
 | Field                | type  | Description                                            |
 | -------------------- | ----- | ------------------------------------------------------ |
-| mode | int   | Current filter mode, usually 0 - off, 1 - on. |
-| level | int   | Enhancement level for particular filter, as a percentage in range from 0% to 100%. |
-| processingTimeMcSec | int | Processing time in microseconds. Read only parameter. |
+| mode | int   | Current filter mode, usually 0 - off, 1 - on (typical). Can have another meaning depends on implementation. |
+| level | int   | Enhancement level for particular filter, as a percentage in range from 0% to 100% (typical). Can have another meaning depends on implementation. The video filter should keep this value in memory. After enable video filter this value should be implemented. |
+| processingTimeMcSec | int | Processing time in microseconds. Read only parameter. Used to control performance of video filter. |
 | type        | int | Type of the filter. Depends on the implementation. |
 | custom1 | float | VFilter custom parameter. Custom parameters used when particular image filter has specific unusual parameter. |
 | custom2 | float | VFilter custom parameter. Custom parameters used when particular image filter has specific unusual parameter. |
@@ -561,7 +579,7 @@ params2.decode(buffer, size);
 
 ## Read params from JSON file and write to JSON file
 
-**VFilter** depends on open source [**ConfigReader**](https://github.com/ConstantRobotics-Ltd/ConfigReader) library which provides method to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
+**VFilter** depends on open source [ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader) library which provides method to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
 
 ```cpp
 // Write params to file.
@@ -752,4 +770,3 @@ private:
     std::mutex m_paramsMutex;
 };
 ```
-

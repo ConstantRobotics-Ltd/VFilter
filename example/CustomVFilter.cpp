@@ -137,7 +137,11 @@ bool cr::video::CustomVFilter::executeCommand(VFilterCommand id)
 	{
 		return true;
 	}
-	case VFilterCommand::STOP:
+	case VFilterCommand::ON:
+	{
+		return true;
+	}
+	case VFilterCommand::OFF:
 	{
 		return true;
 	}

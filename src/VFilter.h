@@ -10,7 +10,7 @@ namespace cr
 namespace video
 {
 /**
- * @brief Mask for PanTilt library params for encoding (serializing).
+ * @brief Mask for VFilter library params for encoding (serializing).
  */
 struct VFilterParamsMask
 {
@@ -23,17 +23,19 @@ struct VFilterParamsMask
     bool custom3{ true };
 };
 
+
+
 /**
- * @brief Class of PanTilt library parameters.
+ * @brief VFilter parameters class.
  */
 class VFilterParams
 {
 public:
 
-    /// Current filter mode, usually 0 - off, 1 - on.
-    int mode{ 0 };
+    /// Current filter mode: 0 - off, 1 - on. Depends on implementation.
+    bool mode{ 0 };
     /// Enhancement level for particular filter, as a percentage in range from 
-    /// 0% to 100%.
+    /// 0% to 100%. May have another meaning depends on implementation.
     int level{ 0 };
     /// Processing time in microseconds. Read only parameter.
     int processingTimeMcSec{ 0 };
@@ -51,7 +53,7 @@ public:
 
     /// Macro from ConfigReader to make params readable/writable from JSON.
     JSON_READABLE(VFilterParams, mode, level, processingTimeMcSec, type,
-        custom1, custom2, custom3)
+                  custom1, custom2, custom3)
 
     /// operator =
     VFilterParams& operator= (const VFilterParams& src);
@@ -68,7 +70,7 @@ public:
      * 2. Can be other errors depends on implementation.
      */
     bool encode(uint8_t* data, int bufferSize, int& size,
-                                            VFilterParamsMask* mask = nullptr);
+                VFilterParamsMask* mask = nullptr);
 
     /**
      * @brief Decode (deserialize) params.
@@ -79,15 +81,17 @@ public:
     bool decode(uint8_t* data, int dataSize);
 };
 
+
+
 /**
- * @brief Enum of PanTilt library params.
+ * @brief Enum of VFilter params.
  */
 enum class VFilterParam
 {
-	/// Current filter mode, usually 0 - off, 1 - on.
+	/// Current filter mode: 0 - off, 1 - on. Depends on implementation.
 	MODE = 1,
 	/// Enhancement level for particular filter, as a percentage in range from 
-	/// 0% to 100%.
+	/// 0% to 100%. May have another meaning depends on implementation.
 	LEVEL,
 	/// Processing time in microseconds. Read only parameter.
 	PROCESSING_TIME_MCSEC,
@@ -104,19 +108,25 @@ enum class VFilterParam
 	CUSTOM_3
 };
 
+
+
 /**
- * @brief Enum of PanTilt library commands.
+ * @brief Enum of VFilter action commands.
  */
 enum class VFilterCommand
 {
     /// Restart image filter algorithm.
     RESTART = 1,
-    /// Stop applying image filter in current pipeline.
-    STOP
+    /// Enable filter.
+    ON,
+    /// Disable filter.
+    OFF
 };
 
+
+
 /**
- * @brief Library PanTilt class with PanTilt methods.
+ * @brief Video filter interface class.
  */
 class VFilter
 {
@@ -128,7 +138,7 @@ public:
     virtual ~VFilter();
 
     /**
-     * @brief Get the version of the PanTilt class.
+     * @brief Get the version of the VFilter class.
      * @return A string representing the version: "Major.Minor.Patch"
      */
     static std::string getVersion();
@@ -150,12 +160,12 @@ public:
 
     /**
      * @brief Get the structure containing all library parameters.
-     * @param params Reference to a PanTiltParams structure.
+     * @param params Reference to a VFilterParams structure.
      */
     virtual void getParams(VFilterParams& params) = 0;
 
     /**
-     * @brief Execute a PanTilt command.
+     * @brief Execute a VFilter action command.
      * @param id The identifier of the library command to be executed.
      * @param arg1 The argument value used by the command.
      * @param arg2 The argument value used by the command.
@@ -174,17 +184,17 @@ public:
      * @brief Encode set param command.
      * @param data Pointer to data buffer. Must have size >= 11.
      * @param size Size of encoded data.
-     * @param id PanTilt parameter id.
-     * @param value PanTilt parameter value.
+     * @param id VFilter parameter id.
+     * @param value VFilter parameter value.
      */
-    static void encodeSetParamCommand(uint8_t* data, int& size, VFilterParam id,
-                                                                   float value);
+    static void encodeSetParamCommand(uint8_t* data, int& size,
+                                      VFilterParam id, float value);
 
     /**
      * @brief Encode command.
      * @param data Pointer to data buffer. Must have size >= 15.
      * @param size Size of encoded data.
-     * @param id PanTilt command ID.
+     * @param id VFilter command ID.
      * @param arg1 The argument value used by the command.
      * @param arg2 The argument value used by the command.
      */
