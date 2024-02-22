@@ -12,6 +12,7 @@ cr::video::CustomVFilter::CustomVFilter()
 
 cr::video::CustomVFilter::~CustomVFilter()
 {
+
 }
 
 
@@ -19,6 +20,14 @@ cr::video::CustomVFilter::~CustomVFilter()
 std::string cr::video::CustomVFilter::getVersion()
 {
 	return CUSTOM_VFILTER_VERSION;
+}
+
+bool cr::video::CustomVFilter::initVFilter(VFilterParams& params)
+{
+	// Lock mutex for setting parameters.
+	std::lock_guard<std::mutex>lock(m_paramsMutex);
+	m_params = params;
+	return true;
 }
 
 
@@ -146,13 +155,29 @@ bool cr::video::CustomVFilter::executeCommand(VFilterCommand id)
 		return true;
 	}
 	}
-
 	return false;
 }
 
 
 
-bool cr::video::CustomVFilter::decodeAndExecuteCommand(uint8_t* data, int size)
+bool cr::video::CustomVFilter::processFrame(cr::video::Frame &frame)
+{
+	// some processing
+    return false;
+}
+
+
+
+bool cr::video::CustomVFilter::setMask(cr::video::Frame mask)
+{
+	std::lock_guard<std::mutex>lock(m_paramsMutex);
+	m_mask = mask;
+    return true;
+}
+
+
+
+bool cr::video::CustomVFilter::decodeAndExecuteCommand(uint8_t *data, int size)
 {
 	// Decode command.
 	VFilterCommand commandId = VFilterCommand::RESTART;

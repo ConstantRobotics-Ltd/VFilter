@@ -115,8 +115,8 @@ enum class VFilterParam
  */
 enum class VFilterCommand
 {
-    /// Restart image filter algorithm.
-    RESTART = 1,
+    /// Reset image filter algorithm.
+    RESET = 1,
     /// Enable filter.
     ON,
     /// Disable filter.
@@ -144,6 +144,14 @@ public:
     static std::string getVersion();
 
     /**
+     * @brief Initialize video filter. The particular filter should initialize
+     * only supported parameters from VFilterParams class.
+     * @param params Parameters class.
+     * @return TRUE if the video filter is initialized or FALSE if not.
+     */
+    virtual bool initVFilter(VFilterParams& params) = 0;
+
+    /**
      * @brief Set the value for a specific library parameter.
      * @param id The identifier of the library parameter.
      * @param value The value to set for the parameter.
@@ -167,8 +175,6 @@ public:
     /**
      * @brief Execute a VFilter action command.
      * @param id The identifier of the library command to be executed.
-     * @param arg1 The argument value used by the command.
-     * @param arg2 The argument value used by the command.
      * @return TRUE if the command was executed successfully, FALSE otherwise.
      */
     virtual bool executeCommand(VFilterCommand id) = 0;
@@ -179,6 +185,14 @@ public:
 	 * @return TRUE if frame processed or FALSE if not.
 	 */
     virtual bool processFrame(cr::video::Frame& frame) = 0;
+
+    /**
+    * @brief Set mask for filter. 
+    * @param mask Filter binary mask. Frame object. The filter must
+    * support pixel formats for mask: GRAY, NV12, NV21, YV12 and YU12.
+    * @return TRUE if mask was set or FALSE if not.
+    */
+    virtual bool setMask(cr::video::Frame mask) = 0;
 
     /**
      * @brief Encode set param command.

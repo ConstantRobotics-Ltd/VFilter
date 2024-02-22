@@ -34,6 +34,14 @@ public:
     static std::string getVersion();
 
     /**
+     * @brief Initialize video filter. The particular filter should initialize
+     * only supported parameters from VFilterParams class.
+     * @param params Parameters class.
+     * @return TRUE if the video filter is initialized or FALSE if not.
+     */
+    bool initVFilter(VFilterParams& params) override;
+
+    /**
      * @brief Set the value for a specific library parameter.
      * @param id The identifier of the library parameter.
      * @param value The value to set for the parameter.
@@ -57,11 +65,24 @@ public:
     /**
      * @brief Execute a CustomVFilter command.
      * @param id The identifier of the library command to be executed.
-     * @param arg1 The argument value used by the command.
-     * @param arg2 The argument value used by the command.
      * @return TRUE if the command was executed successfully, FALSE otherwise.
      */
     bool executeCommand(VFilterCommand id) override;
+
+    /**
+     * @brief Process frame.
+     * @param frame Source video frame.
+     * @return TRUE if video frame was processed or FALSE if not.
+     */
+    bool processFrame(cr::video::Frame& frame) override;
+    
+    /**
+    * @brief Set filter mask. Filter omits image segments, where 
+    * filter mask pixel values equal 0.
+    * @param mask Filter binary mask.
+    * @return TRUE if video filter mask was set or FALSE if not.
+    */
+    bool setMask(cr::video::Frame mask) override;
 
     /**
      * @brief Decode and execute command.
@@ -77,6 +98,8 @@ private:
     cr::video::VFilterParams m_params;
     /// Mutex for parameters access.
     std::mutex m_paramsMutex;
+    /// Mask for filter.
+    cr::video::Frame m_mask;
 };
 }
 }
