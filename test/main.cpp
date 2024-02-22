@@ -67,7 +67,7 @@ bool copyParametersTest()
 	// Prepare random params.
 	cr::video::VFilterParams params1;
 	params1.mode = rand() % 255;
-	params1.level = rand() % 255;
+	params1.level = (float)(rand() % 255);
 	params1.processingTimeMcSec = rand() % 255;
 	params1.type = rand() % 255;
 	params1.custom1 = static_cast<float>(rand() % 255);
@@ -125,7 +125,7 @@ bool encodeDecodeTestWithoutMask()
 	// Prepare random params.
 	cr::video::VFilterParams params1;
 	params1.mode = rand() % 255;
-	params1.level = rand() % 255;
+	params1.level = (float)(rand() % 255);
 	params1.processingTimeMcSec = rand() % 255;
 	params1.type = rand() % 255;
 	params1.custom1 = static_cast<float>(rand() % 255);
@@ -198,7 +198,7 @@ bool encodeDecodeTestWithMask()
 {
 	// Prepare random params.
 	cr::video::VFilterParams params1;
-	params1.level = rand() % 255;
+	params1.level = (float)(rand() % 255);
 	params1.mode = rand() % 255;
 	params1.processingTimeMcSec = rand() % 255;
 	params1.type = rand() % 255;

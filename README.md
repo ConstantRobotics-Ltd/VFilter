@@ -487,7 +487,7 @@ public:
     int mode{ 0 };
     /// Enhancement level for particular filter, as a percentage in range from 
     /// 0% to 100%.
-    int level{ 0 };
+    float level{ 0 };
     /// Processing time in microseconds. Read only parameter.
     int processingTimeMcSec{ 0 };
     /// Type of the filter. Depends on the implementation.
@@ -522,7 +522,7 @@ public:
 | Field                | type  | Description                                            |
 | -------------------- | ----- | ------------------------------------------------------ |
 | mode | int   | Current filter mode, usually 0 - off, 1 - on (typical). Can have another meaning depends on implementation. |
-| level | int   | Enhancement level for particular filter, as a percentage in range from 0% to 100% (typical). Can have another meaning depends on implementation. The video filter should keep this value in memory. After enable video filter this value should be implemented. |
+| level | float | Enhancement level for particular filter, as a percentage in range from 0% to 100% (typical). Can have another meaning depends on implementation. The video filter should keep this value in memory. After enable video filter this value should be implemented. |
 | processingTimeMcSec | int | Processing time in microseconds. Read only parameter. Used to control performance of video filter. |
 | type        | int | Type of the filter. Depends on the implementation. |
 | custom1 | float | VFilter custom parameter. Custom parameters used when particular image filter has specific unusual parameter. |

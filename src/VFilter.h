@@ -36,7 +36,7 @@ public:
     int mode{ 0 };
     /// Enhancement level for particular filter, as a percentage in range from 
     /// 0% to 100%. May have another meaning depends on implementation.
-    int level{ 0 };
+    float level{ 0 };
     /// Processing time in microseconds. Read only parameter.
     int processingTimeMcSec{ 0 };
     /// Type of the filter. Depends on the implementation.
