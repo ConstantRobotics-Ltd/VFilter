@@ -22,6 +22,14 @@ std::string cr::video::CustomVFilter::getVersion()
 	return CUSTOM_VFILTER_VERSION;
 }
 
+bool cr::video::CustomVFilter::initVFilter(VFilterParams& params)
+{
+	// Lock mutex for setting parameters.
+	std::lock_guard<std::mutex>lock(m_paramsMutex);
+	m_params = params;
+	return true;
+}
+
 
 
 bool cr::video::CustomVFilter::setParam(VFilterParam id, float value)

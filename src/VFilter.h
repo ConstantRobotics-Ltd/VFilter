@@ -144,6 +144,14 @@ public:
     static std::string getVersion();
 
     /**
+     * @brief Initialize video filter. The particular filter should initialize
+     * only supported parameters from VFilterParams class.
+     * @param params Parameters class.
+     * @return TRUE if the video filter is initialized or FALSE if not.
+     */
+    virtual bool initVFilter(VFilterParams& params) = 0;
+
+    /**
      * @brief Set the value for a specific library parameter.
      * @param id The identifier of the library parameter.
      * @param value The value to set for the parameter.
@@ -185,7 +193,6 @@ public:
     * @return TRUE if mask was set or FALSE if not.
     */
     virtual bool setMask(cr::video::Frame mask) = 0;
-
 
     /**
      * @brief Encode set param command.

@@ -16,6 +16,7 @@
 - [VFilter interface class description](#VFilter-interface-class-description)
   - [Class declaration](#Class-declaration)
   - [getVersion method](#getVersion-method)
+  - [initVFilter method](#initVFilter-method)
   - [setParam method](#setParam-method)
   - [getParam method](#getParam-method)
   - [getParams method](#getParams-method)
@@ -157,8 +158,24 @@ std::cout << "VFilter version: " << cr::video::VFilter::getVersion();
 Console output:
 
 ```bash
-VFilter class version: 1.0.0
+VFilter class version: 1.1.0
 ```
+
+
+
+## initVFilter method
+
+**initVFilter(...)** method initializes object detector. Particular object detector class should initialize only supported parameters from [**VFilterParams**](#VFilterParams-class-description) class. Method declaration:
+
+```cpp
+virtual bool initVFilter(VFilterParams& params) = 0;
+```
+
+| Parameter | Value                                                        |
+| --------- | ------------------------------------------------------------ |
+| params    | Video filter parameters class. Particular video filter class may not support all params listed in [VFilterParams](#VFilter-class-description) class. If video filter doesn't support particular params, those params should have default values. |
+
+**Returns:** TRUE if the video filter initialized or FALSE if not.
 
 
 
@@ -784,6 +801,9 @@ public:
 
     // Get the version of the VFilter class.
     static std::string getVersion();
+    
+    //  Initialize video filter. 
+    bool initVFilter(VFilterParams& params) override;
     
  	// Set the value for a specific library parameter.
     bool setParam(VFilterParam id, float value) override;

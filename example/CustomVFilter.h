@@ -34,6 +34,14 @@ public:
     static std::string getVersion();
 
     /**
+     * @brief Initialize video filter. The particular filter should initialize
+     * only supported parameters from VFilterParams class.
+     * @param params Parameters class.
+     * @return TRUE if the video filter is initialized or FALSE if not.
+     */
+    bool initVFilter(VFilterParams& params) override;
+
+    /**
      * @brief Set the value for a specific library parameter.
      * @param id The identifier of the library parameter.
      * @param value The value to set for the parameter.
