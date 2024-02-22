@@ -167,8 +167,6 @@ public:
     /**
      * @brief Execute a VFilter action command.
      * @param id The identifier of the library command to be executed.
-     * @param arg1 The argument value used by the command.
-     * @param arg2 The argument value used by the command.
      * @return TRUE if the command was executed successfully, FALSE otherwise.
      */
     virtual bool executeCommand(VFilterCommand id) = 0;
