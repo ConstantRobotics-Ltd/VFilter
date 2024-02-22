@@ -42,7 +42,7 @@
 
 # Overview
 
-The **VFilter** C++ library provides interface as well defines data structures for various video filters implementation. The **VFilter** interface represents video filter module which has video frames as input and output. The **VFilter.h** file contains declaration of data structures: [VFilterCommand](#VFilterCommand-enum) enum, [VFilterParam](#VFilterParam-enum) enum, [VFilterParams](#Class--declaration) class and [VFilter](#Class-declaration) class declaration. The library depends on [Frame](https://github.com/ConstantRobotics-Ltd/Frame) library (describes data structures for video frames, Apache 2.0 license) and [ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader) library (provides methods to read/write JSON config files, Apache 2.0 license). The library uses C++17 standard and doesn't have third-party dependencies to be installed in OS.
+The **VFilter** C++ library provides interface as well defines data structures for various video filters implementations. The **VFilter** interface represents video filter module which has video frames as input and output. The **VFilter.h** file contains declaration of data structures: [VFilterCommand](#VFilterCommand-enum) enum, [VFilterParam](#VFilterParam-enum) enum, [VFilterParams](#Class--declaration) class and [VFilter](#Class-declaration) class declaration. The library depends on [Frame](https://github.com/ConstantRobotics-Ltd/Frame) library (describes data structures for video frames, Apache 2.0 license) and [ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader) library (provides methods to read/write JSON config files, Apache 2.0 license). The library uses C++17 standard and doesn't have third-party dependencies to be installed in OS.
 
 
 
@@ -50,10 +50,10 @@ The **VFilter** C++ library provides interface as well defines data structures f
 
 **Table 1** - Library versions.
 
-| Version | Release date | What's new                                         |
-| ------- | ------------ | -------------------------------------------------- |
-| 1.0.0   | 20.02.2024   | First version of the library.                      |
-| 1.1.0   | 22.02.2024   | - Add setMask method.<br />- Update documentation. |
+| Version | Release date | What's new                                                   |
+| ------- | ------------ | ------------------------------------------------------------ |
+| 1.0.0   | 20.02.2024   | First version of the library.                                |
+| 1.1.0   | 22.02.2024   | - Added setMask(...) method.<br />- Added initVFilter(...) to initialize video filter.<br />- Documentation updated. |
 
 
 
@@ -76,7 +76,7 @@ src ------------------------------ Folder with source code of the library.
 test ----------------------------- Folder for internal tests of library.
     CMakeLists.txt --------------- CMake file for tests application.
     main.cpp --------------------- Source code file tests application.
-src ------------------------------ Folder with source code of the custom VFilter implementation.
+example -------------------------- Folder with source code of the custom VFilter implementation.
     CMakeLists.txt --------------- CMake file of the library.
     CustomVFilter.cpp ------------ Source code file of the library.
     CustomVFilter.h -------------- Header file which includes CustomVFilter class declaration.
@@ -92,7 +92,7 @@ src ------------------------------ Folder with source code of the custom VFilter
 
 ## Class declaration
 
-**VFilter** interface class declared in **VFilter.h** file. Class declaration:
+The **VFilter** interface class declared in **VFilter.h** file. Class declaration:
 
 ```cpp
 class VFilter
@@ -102,8 +102,11 @@ public:
     /// Class destructor.
     virtual ~VFilter();
 
-    /// Get the version of the VFilter class.
+    /// version of the VFilter class.
     static std::string getVersion();
+
+    /// Initialize video filter.
+    virtual bool initVFilter(VFilterParams& params) = 0;
 
     /// Set the value for a specific library parameter.
     virtual bool setParam(VFilterParam id, float value) = 0;
@@ -119,8 +122,8 @@ public:
 
     /// Process frame.
     virtual bool processFrame(cr::video::Frame& frame) = 0;
-    
-    /// Set mask.
+
+    /// Set mask for filter.
     virtual bool setMask(cr::video::Frame mask) = 0;
 
     /// Encode set param command.
@@ -165,7 +168,7 @@ VFilter class version: 1.1.0
 
 ## initVFilter method
 
-**initVFilter(...)** method initializes object detector. Particular object detector class should initialize only supported parameters from [**VFilterParams**](#VFilterParams-class-description) class. Method declaration:
+**initVFilter(...)** method initializes video filter. Particular video filter class should initialize only supported parameters from [VFilterParams](#VFilterParams-class-description) class. Method declaration:
 
 ```cpp
 virtual bool initVFilter(VFilterParams& params) = 0;
@@ -173,7 +176,7 @@ virtual bool initVFilter(VFilterParams& params) = 0;
 
 | Parameter | Value                                                        |
 | --------- | ------------------------------------------------------------ |
-| params    | Video filter parameters class. Particular video filter class may not support all params listed in [VFilterParams](#VFilter-class-description) class. If video filter doesn't support particular params, those params should have default values. |
+| params    | [VFilterParams](#VFilter-class-description) class object. Particular video filter class may not support all params listed in [VFilterParams](#VFilter-class-description) class. If video filter doesn't support particular params, those params should have default values. |
 
 **Returns:** TRUE if the video filter initialized or FALSE if not.
 
@@ -214,7 +217,7 @@ virtual float getParam(VFilterParam id) = 0;
 
 ## getParams method
 
-**getParams(...)** method is designed to obtain params structure. **VFilter** based library should provide thread-safe **getParams(...)** method call. This means that the **getParams(...)** method can be safely called from any thread. Method declaration:
+**getParams(...)** method is designed to obtain all video filter params. **VFilter** based library should provide thread-safe **getParams(...)** method call. This means that the **getParams(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual void getParams(VFilterParams& params) = 0;
@@ -228,7 +231,7 @@ virtual void getParams(VFilterParams& params) = 0;
 
 ## executeCommand method
 
-**executeCommand(...)** method executes library action command. **VFilter** based library should provide thread-safe **executeCommand(...)** method call. This means that the **executeCommand(...)** method can be safely called from any thread. Method declaration:
+**executeCommand(...)** method executes video filter action command. **VFilter** based library should provide thread-safe **executeCommand(...)** method call. This means that the **executeCommand(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual bool executeCommand(VFilterCommand id) = 0;
@@ -244,7 +247,7 @@ virtual bool executeCommand(VFilterCommand id) = 0;
 
 ## processFrame method
 
-**processFrame(...)** method designed to process frame . **VFilter** based library should provide thread-safe **processFrame(...)** method call. This means that the **processFrame(...)** method can be safely called from any thread. Method declaration:
+**processFrame(...)** method designed to process frame. **VFilter** based library should provide thread-safe **processFrame(...)** method call. This means that the **processFrame(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual bool processFrame(cr::video::Frame& frame) = 0;
@@ -252,15 +255,15 @@ virtual bool processFrame(cr::video::Frame& frame) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| frame     | Reference to [**Frame**](https://github.com/ConstantRobotics-Ltd/Frame) object. |
+| frame     | Reference to [Frame](https://github.com/ConstantRobotics-Ltd/Frame) object. |
 
-**Returns:** TRUE if frame processed or FALSE if not.
+**Returns:** TRUE if frame processed or FALSE if not. If filter disabled the method should return TRUE without video frame processing.
 
 
 
 ## setMask method
 
-**setMask(...)** method designed to set mask. Method declaration:
+**setMask(...)** method designed to set video filter mask. Method declaration:
 
 ```c++
 virtual bool setMask(cr::video::Frame mask) = 0;
@@ -268,9 +271,9 @@ virtual bool setMask(cr::video::Frame mask) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| mask      | Filter mask is [**Frame**](https://github.com/ConstantRobotics-Ltd/Frame) object with GRAY pixel format. Filter omits image segments, where filter mask pixel values equal 0. |
+| mask      | Filter mask is [Frame](https://github.com/ConstantRobotics-Ltd/Frame) object with GRAY pixel format. Filter omits image segments, where filter mask pixel values equal 0. |
 
-**Returns:** TRUE if the detection mask was set or FALSE if not.
+**Returns:** TRUE if the filter mask was set or FALSE if not.
 
 
 
@@ -407,8 +410,8 @@ Enum declaration:
 ```cpp
 enum class VFilterCommand
 {
-    /// Restart image filter algorithm.
-    RESTART = 1,
+    /// Reset image filter algorithm.
+    RESET = 1,
     /// Enable filter.
     ON,
     /// Disable filter.
@@ -418,11 +421,11 @@ enum class VFilterCommand
 
 **Table 2** - Action commands description.
 
-| Command | Description                     |
-| ------- | ------------------------------- |
-| RESTART | Restart image filter algorithm. |
-| ON      | Enable video filter.            |
-| OFF     | Disable video filter.           |
+| Command | Description                   |
+| ------- | ----------------------------- |
+| RESET   | Reset image filter algorithm. |
+| ON      | Enable video filter.          |
+| OFF     | Disable video filter.         |
 
 
 

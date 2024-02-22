@@ -115,8 +115,8 @@ enum class VFilterParam
  */
 enum class VFilterCommand
 {
-    /// Restart image filter algorithm.
-    RESTART = 1,
+    /// Reset image filter algorithm.
+    RESET = 1,
     /// Enable filter.
     ON,
     /// Disable filter.
