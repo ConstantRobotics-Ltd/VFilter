@@ -4,7 +4,7 @@
 
 # **VFilter C++ interface library**
 
-**v1.0.0**
+**v1.1.0**
 
 
 
@@ -20,6 +20,8 @@
   - [getParam method](#getParam-method)
   - [getParams method](#getParams-method)
   - [executeCommand method](#executeCommand-method)
+  - [processFrame method](#processFrame-method)
+  - [setMask method](#setMask-method)
   - [encodeSetParamCommand method](#encodeSetParamCommand-method)
   - [encodeCommand method](#encodeCommand-method)
   - [decodeCommand method](#decodeCommand-method) 
@@ -47,9 +49,10 @@ The **VFilter** C++ library provides interface as well defines data structures f
 
 **Table 1** - Library versions.
 
-| Version | Release date | What's new                    |
-| ------- | ------------ | ----------------------------- |
-| 1.0.0   | 20.02.2024   | First version of the library. |
+| Version | Release date | What's new                                         |
+| ------- | ------------ | -------------------------------------------------- |
+| 1.0.0   | 20.02.2024   | First version of the library.                      |
+| 1.1.0   | 22.02.2024   | - Add setMask method.<br />- Update documentation. |
 
 
 
@@ -115,6 +118,9 @@ public:
 
     /// Process frame.
     virtual bool processFrame(cr::video::Frame& frame) = 0;
+    
+    /// Set mask.
+    virtual bool setMask(cr::video::Frame mask) = 0;
 
     /// Encode set param command.
     static void encodeSetParamCommand(uint8_t* data, int& size,
@@ -216,6 +222,38 @@ virtual bool executeCommand(VFilterCommand id) = 0;
 | id        | Command  ID according to [VFilterCommand](#VFilterCommand-enum) enum. |
 
 **Returns:** TRUE if the command executed or FALSE if not.
+
+
+
+## processFrame method
+
+**processFrame(...)** method designed to process frame . **VFilter** based library should provide thread-safe **processFrame(...)** method call. This means that the **processFrame(...)** method can be safely called from any thread. Method declaration:
+
+```cpp
+virtual bool processFrame(cr::video::Frame& frame) = 0;
+```
+
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| frame     | Reference to [**Frame**](https://github.com/ConstantRobotics-Ltd/Frame) object. |
+
+**Returns:** TRUE if frame processed or FALSE if not.
+
+
+
+## setMask method
+
+**setMask(...)** method designed to set mask. Method declaration:
+
+```c++
+virtual bool setMask(cr::video::Frame mask) = 0;
+```
+
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| mask      | Filter mask is [**Frame**](https://github.com/ConstantRobotics-Ltd/Frame) object with GRAY pixel format. Filter omits image segments, where filter mask pixel values equal 0. |
+
+**Returns:** TRUE if the detection mask was set or FALSE if not.
 
 
 
@@ -758,6 +796,12 @@ public:
 
     // Execute a VFilter command.
     bool executeCommand(VFilterCommand id) override;
+
+    // Process frame.
+    bool processFrame(cr::video::Frame& frame) override;
+
+    // Set mask.
+    bool setMask(cr::video::Frame mask) override;
 
     // Decode and execute command.
     bool decodeAndExecuteCommand(uint8_t* data, int size);

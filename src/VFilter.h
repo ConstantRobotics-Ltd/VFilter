@@ -179,6 +179,15 @@ public:
     virtual bool processFrame(cr::video::Frame& frame) = 0;
 
     /**
+    * @brief Set mask for filter. 
+    * @param mask Filter binary mask. Frame object. The filter must
+    * support pixel formats for mask: GRAY, NV12, NV21, YV12 and YU12.
+    * @return TRUE if mask was set or FALSE if not.
+    */
+    virtual bool setMask(cr::video::Frame mask) = 0;
+
+
+    /**
      * @brief Encode set param command.
      * @param data Pointer to data buffer. Must have size >= 11.
      * @param size Size of encoded data.
