@@ -142,7 +142,7 @@ bool cr::video::CustomVFilter::executeCommand(VFilterCommand id)
 {
 	switch (id)
 	{
-	case VFilterCommand::RESTART:
+	case VFilterCommand::RESET:
 	{
 		return true;
 	}
@@ -180,7 +180,7 @@ bool cr::video::CustomVFilter::setMask(cr::video::Frame mask)
 bool cr::video::CustomVFilter::decodeAndExecuteCommand(uint8_t *data, int size)
 {
 	// Decode command.
-	VFilterCommand commandId = VFilterCommand::RESTART;
+	VFilterCommand commandId = VFilterCommand::RESET;
 	VFilterParam paramId = VFilterParam::LEVEL;
 	float value = 0.0f;
 	switch (VFilter::decodeCommand(data, size, paramId, commandId, value))
