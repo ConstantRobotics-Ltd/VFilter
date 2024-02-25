@@ -4,7 +4,7 @@
 
 # **VFilter C++ interface library**
 
-**v1.1.0**
+**v1.1.1**
 
 
 
@@ -54,6 +54,7 @@ The **VFilter** C++ library provides interface as well defines data structures f
 | ------- | ------------ | ------------------------------------------------------------ |
 | 1.0.0   | 20.02.2024   | First version of the library.                                |
 | 1.1.0   | 22.02.2024   | - Added setMask(...) method.<br />- Added initVFilter(...) to initialize video filter.<br />- Documentation updated. |
+| 1.1.1   | 25.02.2024   | - Parameter processingTimeMcSec excluded from JSON to read / write. |
 
 
 
@@ -503,8 +504,7 @@ public:
     float custom3{ 0.0f };
 
     /// Macro from ConfigReader to make params readable/writable from JSON.
-    JSON_READABLE(VFilterParams, mode, level, processingTimeMcSec, type,
-                  custom1, custom2, custom3)
+    JSON_READABLE(VFilterParams, mode, level, type, custom1, custom2, custom3)
 
     /// operator =
     VFilterParams& operator= (const VFilterParams& src);

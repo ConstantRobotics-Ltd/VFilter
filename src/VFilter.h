@@ -52,8 +52,7 @@ public:
     float custom3{ 0.0f };
 
     /// Macro from ConfigReader to make params readable/writable from JSON.
-    JSON_READABLE(VFilterParams, mode, level, processingTimeMcSec, type,
-                  custom1, custom2, custom3)
+    JSON_READABLE(VFilterParams, mode, level, type, custom1, custom2, custom3)
 
     /// operator =
     VFilterParams& operator= (const VFilterParams& src);
@@ -61,7 +60,7 @@ public:
     /**
      * @brief Encode (serialize) params.
      * @param data Pointer to buffer to store serialized params.
-     * @param  bufferSize Size of buffer.
+     * @param bufferSize Size of buffer.
      * @param size Size of encoded (serialized) data. Will be <= bufferSize.
      * @param mask Pointer to mask structure. Used to exclude particular
      * params from encoding (from serialization).

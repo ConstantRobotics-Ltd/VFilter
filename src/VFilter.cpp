@@ -13,7 +13,10 @@ cr::video::VFilterParams &cr::video::VFilterParams::operator= (const VFilterPara
 	}
 	
 	// Copy params.
-
+	mode = src.mode;
+	level = src.level;
+	processingTimeMcSec = src.processingTimeMcSec;
+	type = src.type;
 	custom1 = src.custom1;
 	custom2 = src.custom2;
 	custom3 = src.custom3;
