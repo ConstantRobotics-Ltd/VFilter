@@ -33,7 +33,7 @@ class VFilterParams
 public:
 
     /// Current filter mode: 0 - off, 1 - on. Depends on implementation.
-    int mode{ 0 };
+    int mode{ 1 };
     /// Enhancement level for particular filter, as a percentage in range from 
     /// 0% to 100%. May have another meaning depends on implementation.
     float level{ 0 };
