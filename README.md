@@ -1,10 +1,10 @@
-![vfilter_web_logo](_static/vfilter_web_logo.png)
+![vfilter_web_logo](./static/vfilter_web_logo.png)
 
 
 
 # **VFilter C++ interface library**
 
-**v1.1.2**
+**v1.1.3**
 
 
 
@@ -25,7 +25,7 @@
   - [setMask method](#setmask-method)
   - [encodeSetParamCommand method](#encodesetparamcommand-method)
   - [encodeCommand method](#encodecommand-method)
-  - [decodeCommand method](#decodecommand-method) 
+  - [decodeCommand method](#decodecommand-method)
   - [decodeAndExecuteCommand method](#decodeandexecutecommand-method)
 - [Data structures](#data-structures)
   - [VFilterCommand enum](#vfiltercommand-enum)
@@ -42,7 +42,7 @@
 
 # Overview
 
-**VFilter** C++ library provides interface as well defines data structures for various video filters implementations. The **VFilter** interface represents video filter module which has video frames as input and output. The **VFilter.h** file contains declaration of data structures: [VFilterCommand](#vfiltercommand-enum) enum, [VFilterParam](#vfilterparam-enum) enum, [VFilterParams class declaration](#vfilterparams-class-declaration) class and [VFilter](#vfilter-interface-class-declaration) class declaration. The library depends on [Frame](https://github.com/ConstantRobotics-Ltd/Frame) library (describes data structures for video frames, Apache 2.0 license) and [ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader) library (provides methods to read/write JSON config files, Apache 2.0 license). The library uses C++17 standard and doesn't have third-party dependencies to be installed in OS. The library is licensed under the **Apache 2.0** license.
+**VFilter** C++ library provides interface as well defines data structures for various video filters implementations. The **VFilter** interface represents video filter module which has video frames as input and output. The **VFilter.h** file contains declaration of data structures: [VFilterCommand](#vfiltercommand-enum) enum, [VFilterParam](#vfilterparam-enum) enum, [VFilterParams](#vfilterparams-class-declaration) class and [VFilter](#vfilter-interface-class-declaration) class declaration. The library depends on [Frame](https://rapidpixel.constantrobotics.com/docs/service-libraries/frame.html) library (describes data structures for video frames, source code included, Apache 2.0 license) and [ConfigReader](https://rapidpixel.constantrobotics.com/docs/service-libraries/config-reader.html) library (provides methods to read/write JSON config files, source code included, Apache 2.0 license). The library uses C++17 standard and doesn't have third-party dependencies to be installed in OS. The library is licensed under the **Apache 2.0** license.
 
 
 
@@ -56,6 +56,7 @@
 | 1.1.0   | 22.02.2024   | - Added setMask(...) method.<br />- Added initVFilter(...) to initialize video filter.<br />- Documentation updated. |
 | 1.1.1   | 25.02.2024   | - Parameter processingTimeMcSec excluded from JSON to read / write. |
 | 1.1.2   | 24.03.2024   | - Frame class updated.<br />- ConfigReader class updated.<br />- Documentation updated. |
+| 1.1.3   | 21.05.2024   | - Submodules updated.<br />- Documentation updated. |
 
 
 
@@ -64,26 +65,26 @@
 The library supplied by source code only. The user would be given a set of files in the form of a CMake project (repository). The repository structure is shown below:
 
 ```xml
-CMakeLists.txt ------------------ Main CMake file of the library.
-3rdparty ------------------------ Folder with third-party libraries.
-    CMakeLists.txt -------------- CMake file which includes third-party libraries.
-    ConfigReader ---------------- Source code of the ConfigReader library.
-    Frame ----------------------- Source code of the Frame library.
-src ----------------------------- Folder with source code of the library.
-    CMakeLists.txt -------------- CMake file of the library.
-    VFilter.cpp ----------------- Source code file of the library.
-    VFilter.h ------------------- Header file which includes VFilter class declaration.
-    VFilterVersion.h ------------ Header file which includes version of the library.
-    VFilterVersion.h.in --------- CMake service file to generate version file.
-test ---------------------------- Folder for internal tests of library.
-    CMakeLists.txt -------------- CMake file for tests application.
-    main.cpp -------------------- Source code file tests application.
-example ------------------------- Folder with source code of the custom VFilter implementation.
-    CMakeLists.txt -------------- CMake file of the library.
-    CustomVFilter.cpp ----------- Source code file of the library.
-    CustomVFilter.h ------------- Header file which includes CustomVFilter class declaration.
-    CustomVFilterVersion.h ------ Header file which includes version of the library.
-    CustomVFilterVersion.h.in --- CMake service file to generate version file.
+CMakeLists.txt ----------------- Main CMake file of the library.
+3rdparty ----------------------- Folder with third-party libraries.
+    CMakeLists.txt ------------- CMake file to includes third-party libraries.
+    ConfigReader --------------- Folder with ConfigReader library source code.
+    Frame ---------------------- Folder with Frame library source code.
+src ---------------------------- Folder with source code of the library.
+    CMakeLists.txt ------------- CMake file of the library.
+    VFilter.cpp ---------------- C++ implementation file.
+    VFilter.h ------------------ Main header file of the library.
+    VFilterVersion.h ----------- Header file which includes version of the library.
+    VFilterVersion.h.in -------- Service CMake file to generate version file.
+test --------------------------- Folder for the test application.
+    CMakeLists.txt ------------- CMake file for the test application.
+    main.cpp ------------------- Source code file of the test application.
+example ------------------------ Folder with source code of the custom VFilter implementation.
+    CMakeLists.txt ------------- CMake file of the library.
+    CustomVFilter.cpp ---------- Source code file of the library.
+    CustomVFilter.h ------------ Header file which includes CustomVFilter class declaration.
+    CustomVFilterVersion.h ----- Header file which includes version of the library.
+    CustomVFilterVersion.h.in -- CMake service file to generate version file.
 ```
 
 
@@ -104,7 +105,7 @@ public:
     /// Class destructor.
     virtual ~VFilter();
 
-    /// version of the VFilter class.
+    /// Get the version of the VFilter class.
     static std::string getVersion();
 
     /// Initialize video filter.
@@ -163,7 +164,7 @@ std::cout << "VFilter version: " << cr::video::VFilter::getVersion();
 Console output:
 
 ```bash
-VFilter class version: 1.1.2
+VFilter class version: 1.1.3
 ```
 
 
@@ -257,7 +258,7 @@ virtual bool processFrame(cr::video::Frame& frame) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| frame     | Reference to [Frame](https://github.com/ConstantRobotics-Ltd/Frame) object. Particular video filter implementation must keep original video frame resolution (width and height), **sourceId** and **frameId** fields. |
+| frame     | Reference to [Frame](https://rapidpixel.constantrobotics.com/docs/service-libraries/frame.html) object. Particular video filter implementation must keep original video frame resolution (width and height), **sourceId** and **frameId** fields. |
 
 **Returns:** TRUE if frame processed or FALSE if not. If filter disabled the method should return TRUE without video frame processing.
 
@@ -273,7 +274,7 @@ virtual bool setMask(cr::video::Frame mask) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| mask      | Filter mask is [Frame](https://github.com/ConstantRobotics-Ltd/Frame) object with GRAY pixel format. Filter omits image segments, where filter mask pixel values equal 0. |
+| mask      | Filter mask is [Frame](https://rapidpixel.constantrobotics.com/docs/service-libraries/frame.html) object with GRAY pixel format. Filter omits image segments, where filter mask pixel values equal 0. |
 
 **Returns:** TRUE if the filter mask was set or FALSE if not.
 
@@ -610,7 +611,7 @@ params2.decode(buffer, size);
 
 ## Read params from JSON file and write to JSON file
 
-**VFilter** depends on open source [ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader) library which provides method to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
+**VFilter** depends on open source [ConfigReader](https://rapidpixel.constantrobotics.com/docs/service-libraries/config-reader.html) library which provides method to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
 
 ```cpp
 // Write params to file.
@@ -638,9 +639,9 @@ if(!outConfig.readFromFile("VFilterParams.json"))
         "mode": 2,
         "processingTimeMcSec": 23,
         "type": 1,
-        "custom1": 0.7f,
-        "custom2": 12.0f,
-        "custom3": 0.61f
+        "custom1": 0.7,
+        "custom2": 12.0,
+        "custom3": 0.61
     }
 }
 ```
