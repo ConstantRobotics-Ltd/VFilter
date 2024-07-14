@@ -162,8 +162,8 @@ bool cr::video::CustomVFilter::executeCommand(VFilterCommand id)
 
 bool cr::video::CustomVFilter::processFrame(cr::video::Frame &frame)
 {
-	// some processing
-    return false;
+	// Some processing.
+    return true;
 }
 
 

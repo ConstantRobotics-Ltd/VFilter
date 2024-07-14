@@ -23,6 +23,11 @@ else()
     SET(REWRITE_FORCE "")
 endif()
 
+# Set default Release mode if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type defaulting to Release" FORCE)
+endif()
+
 
 
 ################################################################################
@@ -30,8 +35,15 @@ endif()
 ## project configuration
 ################################################################################
 SET(${PARENT}_VFILTER                        ON  CACHE BOOL "" ${REWRITE_FORCE})
-SET(${PARENT}_VFILTER_TEST                   ON  CACHE BOOL "" ${REWRITE_FORCE})
-SET(${PARENT}_VFILTER_EXAMPLE                ON  CACHE BOOL "" ${REWRITE_FORCE})
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    SET(${PARENT}_VFILTER_TEST               OFF CACHE BOOL "" ${REWRITE_FORCE})
+    SET(${PARENT}_VFILTER_EXAMPLE            OFF CACHE BOOL "" ${REWRITE_FORCE})
+    message("${PROJECT_NAME} included as subrepository")
+else()
+    SET(${PARENT}_VFILTER_TEST               ON  CACHE BOOL "" ${REWRITE_FORCE})
+    SET(${PARENT}_VFILTER_EXAMPLE            ON  CACHE BOOL "" ${REWRITE_FORCE})
+    message("${PROJECT_NAME} is stand alone repository")
+endif()
 
 
 
@@ -40,8 +52,8 @@ SET(${PARENT}_VFILTER_EXAMPLE                ON  CACHE BOOL "" ${REWRITE_FORCE})
 ## Adding subdirectories according to the project configuration
 ################################################################################
 if (${PARENT}_VFILTER)
-    add_subdirectory(src)
     add_subdirectory(3rdparty)
+    add_subdirectory(src)
 endif()
 
 if (${PARENT}_VFILTER_TEST)

@@ -33,11 +33,11 @@ class VFilterParams
 {
 public:
 
-    /// Current filter mode: 0 - off, 1 - on. Depends on implementation.
+    /// Filter mode: 0 - off, 1 - on. Depends on implementation.
     int mode{ 1 };
-    /// Enhancement level for particular filter, as a percentage in range from 
+    /// Enhancement level for particular filter, as a percentage from 
     /// 0% to 100%. May have another meaning depends on implementation.
-    float level{ 0 };
+    float level{ 0.0f };
     /// Processing time in microseconds. Read only parameter.
     int processingTimeMcSec{ 0 };
     /// Type of the filter. Depends on the implementation.
@@ -52,10 +52,12 @@ public:
     /// filter has specific unusual parameter.
     float custom3{ 0.0f };
 
-    /// Macro from ConfigReader to make params readable/writable from JSON.
+    /// Macro from ConfigReader to make params readable / writable from JSON.
     JSON_READABLE(VFilterParams, mode, level, type, custom1, custom2, custom3)
 
-    /// operator =
+    /**
+     * @brief operator =
+     */
     VFilterParams& operator= (const VFilterParams& src);
 
     /**
@@ -88,9 +90,9 @@ public:
  */
 enum class VFilterParam
 {
-	/// Current filter mode: 0 - off, 1 - on. Depends on implementation.
+	/// Filter mode: 0 - off, 1 - on. Depends on implementation.
 	MODE = 1,
-	/// Enhancement level for particular filter, as a percentage in range from 
+	/// Enhancement level for particular filter, as a percentage from 
 	/// 0% to 100%. May have another meaning depends on implementation.
 	LEVEL,
 	/// Processing time in microseconds. Read only parameter.
@@ -115,7 +117,7 @@ enum class VFilterParam
  */
 enum class VFilterCommand
 {
-    /// Reset image filter algorithm.
+    /// Reset video filter algorithm.
     RESET = 1,
     /// Enable filter.
     ON,
@@ -139,7 +141,7 @@ public:
 
     /**
      * @brief Get the version of the VFilter class.
-     * @return A string representing the version: "Major.Minor.Patch"
+     * @return A string representing the version: "Major.Minor.Patch".
      */
     static std::string getVersion();
 
@@ -168,7 +170,7 @@ public:
 
     /**
      * @brief Get the structure containing all library parameters.
-     * @param params Reference to a VFilterParams structure.
+     * @param params Parameters class.
      */
     virtual void getParams(VFilterParams& params) = 0;
 
@@ -197,7 +199,7 @@ public:
     /**
      * @brief Encode set param command.
      * @param data Pointer to data buffer. Must have size >= 11.
-     * @param size Size of encoded data.
+     * @param size Size of encoded data. Size will be 11 bytes.
      * @param id VFilter parameter id.
      * @param value VFilter parameter value.
      */
@@ -205,9 +207,9 @@ public:
                                       VFilterParam id, float value);
 
     /**
-     * @brief Encode command.
-     * @param data Pointer to data buffer. Must have size >= 15.
-     * @param size Size of encoded data.
+     * @brief Encode action command.
+     * @param data Pointer to data buffer. Must have size >= 7.
+     * @param size Size of encoded data. Size will be 7 bytes.
      * @param id VFilter command ID.
      * @param arg1 The argument value used by the command.
      * @param arg2 The argument value used by the command.
@@ -218,10 +220,10 @@ public:
      * @brief Decode command.
      * @param data Pointer to command data.
      * @param size Size of data.
-     * @param paramId Output command ID.
+     * @param paramId Output parameter ID.
      * @param commandId Output command ID.
-     * @param value Param or command value.
-     * @return 0 - command decoded, 1 - set param command decoded, -1 - error.
+     * @param value Parameter value in case decoding set parameter command.
+     * @return 0 - action command decoded, 1 - set param command decoded, -1 - error.
      */
     static int decodeCommand(uint8_t* data, int size, VFilterParam& paramId,
                                     VFilterCommand& commandId, float& value);

@@ -18,6 +18,11 @@ bool encodeDecodeTestWithoutMask();
  */
 bool encodeDecodeTestWithMask();
 
+/**
+ * @brief Read / write JSON test.
+ */
+bool readWriteJsonTest();
+
 
 
 int main(void)
@@ -48,6 +53,17 @@ int main(void)
 
 	std::cout << "Encode/decode params test with mask:" << std::endl;
 	if (encodeDecodeTestWithMask())
+	{
+		std::cout << "OK" << std::endl;
+	}
+	else
+	{
+		std::cout << "ERROR" << std::endl;
+	}
+	std::cout << std::endl;
+
+    std::cout << "Read/Write JSON test:" << std::endl;
+	if (readWriteJsonTest())
 	{
 		std::cout << "OK" << std::endl;
 	}
@@ -142,6 +158,8 @@ bool encodeDecodeTestWithoutMask()
 		return false;
 	}
 
+    std::cout << "Serialized data size: " << size << " bytes" << std::endl;
+
 	// Decode (deserialize) params.
 	cr::video::VFilterParams params2;
 	if (!params2.decode(buffer, size))
@@ -187,7 +205,6 @@ bool encodeDecodeTestWithoutMask()
 		std::cout << "[" << __LINE__ << "] " << "custom3 not equal" << std::endl;
 		result = false;
 	}
-
 
 	return result;
 }
@@ -267,6 +284,83 @@ bool encodeDecodeTestWithMask()
 		result = false;
 	}
 	if (params2.custom3 != params1.custom3)
+	{
+		std::cout << "[" << __LINE__ << "] " << "custom3 not equal" << std::endl;
+		result = false;
+	}
+
+	return result;
+}
+
+
+
+bool readWriteJsonTest()
+{
+    // Prepare random params.
+	cr::video::VFilterParams params1;
+	params1.mode = rand() % 255;
+	params1.level = (float)(rand() % 255);
+	params1.processingTimeMcSec = rand() % 255;
+	params1.type = rand() % 255;
+	params1.custom1 = static_cast<float>(rand() % 255);
+	params1.custom2 = static_cast<float>(rand() % 255);
+	params1.custom3 = static_cast<float>(rand() % 255);
+
+	// Save to JSON.
+    cr::utils::ConfigReader configReader1;
+    if (!configReader1.set(params1, "Params"))
+    {
+        std::cout << "[" << __LINE__ << "] " << "Can't set params" << std::endl;
+        return false;
+    }
+    if (!configReader1.writeToFile("VFilterParams.json"))
+    {
+        std::cout << "[" << __LINE__ << "] " << "Can't write to file" << std::endl;
+        return false;
+    }
+
+    // Read params from file.
+    cr::utils::ConfigReader configReader2;
+    if (!configReader2.readFromFile("VFilterParams.json"))
+    {
+        std::cout << "[" << __LINE__ << "] " << "Can't read from file" << std::endl;
+        return false;
+    }
+    cr::video::VFilterParams params2;
+    if (!configReader2.get(params2, "Params"))
+    {
+        std::cout << "[" << __LINE__ << "] " << "Can't get params" << std::endl;
+        return false;
+    }
+
+	// Compare params.
+	bool result = true;
+	if (params1.mode != params2.mode)
+	{
+		std::cout << "[" << __LINE__ << "] " << "mode not equal" << std::endl;
+		result = false;
+	}
+	if (params1.level != params2.level)
+	{
+		std::cout << "[" << __LINE__ << "] " << "level not equal" << std::endl;
+		result = false;
+	}
+	if (params1.type != params2.type)
+	{
+		std::cout << "[" << __LINE__ << "] " << "type not equal" << std::endl;
+		result = false;
+	}
+	if (params1.custom1 != params2.custom1)
+	{
+		std::cout << "[" << __LINE__ << "] " << "custom1 not equal" << std::endl;
+		result = false;
+	}
+	if (params1.custom2 != params2.custom2)
+	{
+		std::cout << "[" << __LINE__ << "] " << "custom2 not equal" << std::endl;
+		result = false;
+	}
+	if (params1.custom3 != params2.custom3)
 	{
 		std::cout << "[" << __LINE__ << "] " << "custom3 not equal" << std::endl;
 		result = false;

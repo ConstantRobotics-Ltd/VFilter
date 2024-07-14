@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.13)
 ## INTERFACE-PROJECT
 ## name and version
 ###############################################################################
-project(VFilter VERSION 1.1.3 LANGUAGES CXX)
+project(VFilter VERSION 1.1.4 LANGUAGES CXX)
 
 
 

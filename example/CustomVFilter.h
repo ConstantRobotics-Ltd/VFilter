@@ -90,7 +90,7 @@ public:
      * @param size Size of data.
      * @return 0 - command decoded, 1 - set param command decoded, -1 - error.
      */
-    bool decodeAndExecuteCommand(uint8_t* data, int size);
+    bool decodeAndExecuteCommand(uint8_t* data, int size) override;
 
 private:
 
