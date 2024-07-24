@@ -741,7 +741,7 @@ if (${PARENT}_SUBMODULE_VFILTER)
 endif()
 ```
 
-File **3rdparty/CMakeLists.txt** adds folder **VFilter** to your project and excludes test application and example (VFilter class test application and example of custom **VFilter** class implementation) from compiling (by default example and test applicayion excluded from compiling if **VFilter** included as subrepository). Your repository new structure will be:
+File **3rdparty/CMakeLists.txt** adds folder **VFilter** to your project and excludes test application and example (VFilter class test application and example of custom **VFilter** class implementation) from compiling (by default example and test application excluded from compiling if **VFilter** included as sub-repository). Your repository new structure will be:
 
 ```bash
 CMakeLists.txt
