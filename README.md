@@ -266,7 +266,7 @@ virtual bool processFrame(cr::video::Frame& frame) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| frame     | [Frame](https://rapidpixel.constantrobotics.com/docs/service-libraries/frame.html) object for processing (input and result frame). Particular video filter implementation must keep original video frame resolution (width and height), **sourceId** and **frameId** fields. |
+| frame     | [Frame](https://rapidpixel.constantrobotics.com/docs/Service/Frame.html) object for processing (input and result frame). Particular video filter implementation must keep original video frame resolution (width and height), **sourceId** and **frameId** fields. |
 
 **Returns:** TRUE if frame processed or FALSE if not. If filter disabled the method should return TRUE without video frame processing.
 
@@ -282,7 +282,7 @@ virtual bool setMask(cr::video::Frame mask) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| mask      | Filter mask is [Frame](https://rapidpixel.constantrobotics.com/docs/service-libraries/frame.html) object with  **GRAY**, **NV12**, **NV21**, **YV12** or YU12 pixel format. Filter omits image segments, where filter mask pixel values equal 0. |
+| mask      | Filter mask is [Frame](https://rapidpixel.constantrobotics.com/docs/Service/Frame.html) object with  **GRAY**, **NV12**, **NV21**, **YV12** or YU12 pixel format. Filter omits image segments, where filter mask pixel values equal 0. |
 
 **Returns:** TRUE if the filter mask was set or FALSE if not.
 
@@ -621,7 +621,7 @@ params2.decode(buffer, size);
 
 ## Read params from JSON file and write to JSON file
 
-**VFilter** depends on open source [ConfigReader](https://rapidpixel.constantrobotics.com/docs/service-libraries/config-reader.html) library which provides method to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
+**VFilter** depends on open source [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides method to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
 
 ```cpp
 // Prepare random params.
