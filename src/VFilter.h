@@ -56,11 +56,6 @@ public:
     JSON_READABLE(VFilterParams, mode, level, type, custom1, custom2, custom3)
 
     /**
-     * @brief operator =
-     */
-    VFilterParams& operator= (const VFilterParams& src);
-
-    /**
      * @brief Encode (serialize) params.
      * @param data Pointer to buffer to store serialized params.
      * @param bufferSize Size of buffer.

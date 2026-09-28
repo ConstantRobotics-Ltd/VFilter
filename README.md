@@ -489,9 +489,6 @@ public:
     /// Macro from ConfigReader to make params readable / writable from JSON.
     JSON_READABLE(VFilterParams, mode, level, type, custom1, custom2, custom3)
 
-    /// operator =
-    VFilterParams& operator= (const VFilterParams& src);
-
     /// Encode (serialize) params.
     bool encode(uint8_t* data, int bufferSize, int& size,
                 VFilterParamsMask* mask = nullptr);
