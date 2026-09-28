@@ -4,7 +4,7 @@
 
 # **VFilter C++ interface library**
 
-**v1.1.4**
+**v1.1.5**
 
 
 
@@ -58,6 +58,7 @@
 | 1.1.2   | 24.03.2024   | - Frame class updated.<br />- ConfigReader class updated.<br />- Documentation updated. |
 | 1.1.3   | 21.05.2024   | - Submodules updated.<br />- Documentation updated.          |
 | 1.1.4   | 13.07.2024   | - Submodules updated.<br />- CMake updated.                  |
+| 1.1.5   | 28.09.2026   | - Submodules updated.<br />- Added build flags.              |
 
 
 
@@ -172,7 +173,7 @@ std::cout << "VFilter version: " << cr::video::VFilter::getVersion();
 Console output:
 
 ```bash
-VFilter class version: 1.1.4
+VFilter class version: 1.1.5
 ```
 
 
