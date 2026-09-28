@@ -4,28 +4,6 @@
 
 
 
-cr::video::VFilterParams &cr::video::VFilterParams::operator= (const VFilterParams& src)
-{
-	// Check yourself.
-	if (this == &src)
-	{
-		return *this;
-	}
-	
-	// Copy params.
-	mode = src.mode;
-	level = src.level;
-	processingTimeMcSec = src.processingTimeMcSec;
-	type = src.type;
-	custom1 = src.custom1;
-	custom2 = src.custom2;
-	custom3 = src.custom3;
-
-	return *this;
-}
-
-
-
 bool cr::video::VFilterParams::encode(uint8_t* data, int bufferSize, int& size,
 	VFilterParamsMask* mask)
 {
