@@ -1,265 +1,320 @@
 #include "VFilter.h"
 #include "VFilterVersion.h"
+#include <array>
+#include <cstdint>
 #include <cstring>
+#include <limits>
+#include <string>
+
+
+
+namespace
+{
+// The encoded data stores int and float values as raw 4 bytes values in the
+// byte order of the host.
+static_assert(sizeof(int) == 4, "int must be 4 bytes");
+static_assert(sizeof(float) == 4, "float must be 4 bytes");
+// Major and minor version are stored in one byte each.
+static_assert(VFILTER_MAJOR_VERSION >= 0 &&
+              VFILTER_MAJOR_VERSION <= std::numeric_limits<uint8_t>::max(),
+              "major version must fit in a byte");
+static_assert(VFILTER_MINOR_VERSION >= 0 &&
+              VFILTER_MINOR_VERSION <= std::numeric_limits<uint8_t>::max(),
+              "minor version must fit in a byte");
+
+/// Size of an int or float value in the encoded data, bytes.
+constexpr int VALUE_SIZE{4};
+
+/// Data type of the action command: first byte of the encoded data.
+constexpr uint8_t COMMAND_DATA_TYPE{0x00};
+/// Data type of the set param command: first byte of the encoded data.
+constexpr uint8_t SET_PARAM_DATA_TYPE{0x01};
+/// Data type of the encoded params: first byte of the encoded data.
+constexpr uint8_t PARAMS_DATA_TYPE{0x02};
+/// Position of the major version in the encoded data. The minor version
+/// follows it.
+constexpr int MAJOR_VERSION_POS{1};
+/// Position of the minor version in the encoded data.
+constexpr int MINOR_VERSION_POS{2};
+
+/// Position of the command ID (parameter ID) in the encoded command.
+constexpr int COMMAND_ID_POS{3};
+/// Position of the parameter value in the encoded set param command.
+constexpr int COMMAND_VALUE_POS{COMMAND_ID_POS + VALUE_SIZE};
+/// Size of the encoded action command: data type, version and ID.
+constexpr int COMMAND_SIZE{COMMAND_ID_POS + VALUE_SIZE};
+/// Size of the encoded set param command: action command and value.
+constexpr int SET_PARAM_COMMAND_SIZE{COMMAND_SIZE + VALUE_SIZE};
+static_assert(COMMAND_SIZE == 7, "wrong size of the encoded command");
+static_assert(SET_PARAM_COMMAND_SIZE == 11,
+              "wrong size of the encoded set param command");
+
+/// Number of fields of VFilterParams in the encoded params.
+constexpr int FIELDS_NUMBER{7};
+/// Position of the mask in the encoded params. The mask has one byte.
+constexpr int PARAMS_MASK_POS{3};
+/// Size of the encoded params header: data type, version and mask.
+constexpr int PARAMS_HEADER_SIZE{PARAMS_MASK_POS + 1};
+/// Maximum size of the encoded params (all fields are encoded).
+constexpr int PARAMS_MAX_SIZE{PARAMS_HEADER_SIZE + FIELDS_NUMBER * VALUE_SIZE};
+static_assert(PARAMS_MAX_SIZE == 32, "wrong size of the encoded params");
+
+/// Bit of the mask which belongs to the first field. The bit of the next field
+/// is the next less significant one.
+constexpr int FIRST_MASK_BIT{0x80};
+/// Bits of the mask byte which do not belong to any field. The encoder writes
+/// zero, the decoder rejects the data with such a bit set: the data was not
+/// produced by the encoder.
+constexpr uint8_t RESERVED_MASK_BITS{0x01};
+static_assert(((FIRST_MASK_BIT >> (FIELDS_NUMBER - 1)) >> 1) ==
+              RESERVED_MASK_BITS, "wrong reserved bits of the mask");
+
+
+
+/// Get the mask bit of the field with the given index in the field table.
+uint8_t maskBit(int index)
+{
+    return static_cast<uint8_t>(FIRST_MASK_BIT >> index);
+}
+
+
+
+/// Get the table of the pointers to the VFilterParams fields in the order they
+/// are stored in the encoded data (the same order as the bits of the mask).
+/// The same table is used by the encoder and by the decoder, so the format
+/// cannot diverge.
+std::array<void*, FIELDS_NUMBER> makeFieldTable(
+        cr::video::VFilterParams& params)
+{
+    return {{&params.mode, &params.level, &params.processingTimeMcSec,
+             &params.type, &params.custom1, &params.custom2,
+             &params.custom3}};
+}
+
+
+
+/// Get the table of the mask flags in the order of the field table.
+std::array<bool, FIELDS_NUMBER> makeMaskTable(
+        const cr::video::VFilterParamsMask& mask)
+{
+    return {{mask.mode, mask.level, mask.processingTimeMcSec, mask.type,
+             mask.custom1, mask.custom2, mask.custom3}};
+}
+}
 
 
 
 bool cr::video::VFilterParams::encode(uint8_t* data, int bufferSize, int& size,
-	VFilterParamsMask* mask)
+                                      VFilterParamsMask* mask)
 {
-	// Check buffer size.
-	if (bufferSize < 32)
-		return false;
+    // Check the pointer and the buffer size (the buffer must be able to store
+    // all fields: the size of the encoded data depends on the mask).
+    size = 0;
+    if (data == nullptr || bufferSize < PARAMS_MAX_SIZE)
+    {
+        return false;
+    }
 
-	// Copy atributes.
-	data[0] = 0x02;
-	data[1] = VFILTER_MAJOR_VERSION;
-	data[2] = VFILTER_MINOR_VERSION;
+    // Prepare params mask.
+    VFilterParamsMask paramsMask;
+    if (mask != nullptr)
+    {
+        paramsMask = *mask;
+    }
 
-	// Prepare params mask.
-	VFilterParamsMask paramsMask;
-	if (mask != nullptr)
-		paramsMask = *mask;
+    // Fill the header.
+    data[0] = PARAMS_DATA_TYPE;
+    data[MAJOR_VERSION_POS] = VFILTER_MAJOR_VERSION;
+    data[MINOR_VERSION_POS] = VFILTER_MINOR_VERSION;
 
-	// Fill bit mask for params.
-	int pos = 3;
-	data[pos] = 0x00;
-	data[pos] = data[pos] | (paramsMask.mode ? (uint8_t)128 : (uint8_t)0);
-	data[pos] = data[pos] | (paramsMask.level ? (uint8_t)64 : (uint8_t)0);
-	data[pos] = data[pos] | (paramsMask.processingTimeMcSec ? (uint8_t)32 : (uint8_t)0);
-	data[pos] = data[pos] | (paramsMask.type ? (uint8_t)16 : (uint8_t)0);
-    data[pos] = data[pos] | (paramsMask.custom1 ? (uint8_t)8 : (uint8_t)0);
-    data[pos] = data[pos] | (paramsMask.custom2 ? (uint8_t)4 : (uint8_t)0);
-    data[pos] = data[pos] | (paramsMask.custom3 ? (uint8_t)2 : (uint8_t)0);
-    pos += 1;
+    // Copy selected params to the buffer and fill the bit mask for them.
+    const auto fields = makeFieldTable(*this);
+    const auto selected = makeMaskTable(paramsMask);
+    uint8_t maskByte = 0x00;
+    int pos = PARAMS_HEADER_SIZE;
+    for (int i = 0; i < FIELDS_NUMBER; ++i)
+    {
+        if (!selected[static_cast<size_t>(i)])
+        {
+            continue;
+        }
+        maskByte = static_cast<uint8_t>(maskByte | maskBit(i));
+        std::memcpy(&data[pos], fields[static_cast<size_t>(i)], VALUE_SIZE);
+        pos += VALUE_SIZE;
+    }
+    data[PARAMS_MASK_POS] = maskByte;
+    size = pos;
 
-	// Copy params to buffer.
-	if (paramsMask.mode)
-	{
-		memcpy(&data[pos], &mode, 4);
-		pos += 4;
-	}
-	if (paramsMask.level)
-	{
-		memcpy(&data[pos], &level, 4);
-		pos += 4;
-	}
-	if (paramsMask.processingTimeMcSec)
-	{
-		memcpy(&data[pos], &processingTimeMcSec, 4);
-		pos += 4;
-	}
-	if (paramsMask.type)
-	{
-		memcpy(&data[pos], &type, 4);
-		pos += 4;
-	}
-	if (paramsMask.custom1)
-	{
-		memcpy(&data[pos], &custom1, 4);
-		pos += 4;
-	}
-	if (paramsMask.custom2)
-	{
-		memcpy(&data[pos], &custom2, 4);
-		pos += 4;
-		
-	}
-	if (paramsMask.custom3)
-	{
-		memcpy(&data[pos], &custom3, 4);
-		pos += 4;
-	}
-	
-	size = pos;
-
-	return true;
+    return true;
 }
 
 
 
 bool cr::video::VFilterParams::decode(uint8_t* data, int dataSize)
 {
-	// Check data size.
-	if (dataSize < 4)
-		return false;
+    // Check the pointer and the size (the header must be complete).
+    if (data == nullptr || dataSize < PARAMS_HEADER_SIZE)
+    {
+        return false;
+    }
 
-	// Check atributes.
-	if (data[0] != 0x02 ||
-		data[1] != VFILTER_MAJOR_VERSION ||
-		data[2] != VFILTER_MINOR_VERSION)
-		return false;
+    // Check the data type and the version.
+    if (data[0] != PARAMS_DATA_TYPE ||
+        data[MAJOR_VERSION_POS] != VFILTER_MAJOR_VERSION ||
+        data[MINOR_VERSION_POS] != VFILTER_MINOR_VERSION)
+    {
+        return false;
+    }
+    const uint8_t maskByte = data[PARAMS_MASK_POS];
+    if ((maskByte & RESERVED_MASK_BITS) != 0)
+    {
+        return false;
+    }
 
-	// Decode params.
-	int pos = 4;
-   	if ((data[3] & (uint8_t)128) == (uint8_t)128)
-	{
-		if (dataSize < pos + 4)
-			return false;
-		memcpy(&mode, &data[pos], 4);
-		pos += 4;
-	}
-	else
-	{
-		mode = 0;
-	}
-	if ((data[3] & (uint8_t)64) == (uint8_t)64)
-	{
-		if (dataSize < pos + 4)
-			return false;
-		memcpy(&level, &data[pos], 4);
-		pos += 4;
-	}
-	else
-	{
-		level = 0;
-	}
-	if ((data[3] & (uint8_t)32) == (uint8_t)32)
-	{
-		if (dataSize < pos + 4)
-			return false;
-		memcpy(&processingTimeMcSec, &data[pos], 4);
-		pos += 4;
-	}
-	else
-	{
-		processingTimeMcSec = 0;
-	}
-	if ((data[3] & (uint8_t)16) == (uint8_t)16)
-	{
-		if (dataSize < pos + 4)
-			return false;
-		memcpy(&type, &data[pos], 4);
-		pos += 4;
-	}
-	else
-	{
-		type = 0;
-	}
-	if ((data[3] & (uint8_t)8) == (uint8_t)8)
-	{
-		if (dataSize < pos + 4)
-			return false;
-		memcpy(&custom1, &data[pos], 4);
-		pos += 4;
-	}
-	else
-	{
-		custom1 = 0.0f;
-	}
-	if ((data[3] & (uint8_t)4) == (uint8_t)4)
-	{
-		if (dataSize < pos + 4)
-			return false;
-		memcpy(&custom2, &data[pos], 4);
-		pos += 4;
-	}
-	else
-	{
-		custom2 = 0.0f;
-	}
-	if ((data[3] & (uint8_t)2) == (uint8_t)2)
-	{
-		if (dataSize < pos + 4)
-			return false;
-		memcpy(&custom3, &data[pos], 4);
-		pos += 4;
-	}
-	else
-	{
-		custom3 = 0.0f;
-	}
+    // Decode into a temporary object: this object is changed only if the
+    // whole data is valid. Fields not selected by the mask are set to zero.
+    VFilterParams result;
+    const auto fields = makeFieldTable(result);
+    int pos = PARAMS_HEADER_SIZE;
+    for (int i = 0; i < FIELDS_NUMBER; ++i)
+    {
+        void* field = fields[static_cast<size_t>(i)];
+        if ((maskByte & maskBit(i)) == 0)
+        {
+            std::memset(field, 0, VALUE_SIZE);
+            continue;
+        }
 
-	return true;
+        // Check that the field is inside the data (pos <= dataSize here).
+        if (dataSize - pos < VALUE_SIZE)
+        {
+            return false;
+        }
+        std::memcpy(field, &data[pos], VALUE_SIZE);
+        pos += VALUE_SIZE;
+    }
+
+    // The size of the encoded data is defined by the mask: extra bytes mean
+    // that the data is damaged or is not the data of this class.
+    if (pos != dataSize)
+    {
+        return false;
+    }
+
+    *this = result;
+
+    return true;
 }
 
 
 
-cr::video::VFilter::~VFilter()
-{
-
-}
+cr::video::VFilter::~VFilter() = default;
 
 
 
 std::string cr::video::VFilter::getVersion()
 {
-	return VFILTER_VERSION;
+    return VFILTER_VERSION;
 }
 
 
 
 void cr::video::VFilter::encodeSetParamCommand(
-	uint8_t* data, int& size, VFilterParam id, float value)
+        uint8_t* data, int& size, VFilterParam id, float value)
 {
-	// Fill header.
-	data[0] = 0x01;
-	data[1] = VFILTER_MAJOR_VERSION;
-	data[2] = VFILTER_MINOR_VERSION;
+    size = 0;
+    if (data == nullptr)
+    {
+        return;
+    }
 
-	// Fill data.
-	int paramId = (int)id;
-	memcpy(&data[3], &paramId, 4);
-	memcpy(&data[7], &value, 4);
-	size = 11;
+    // Fill header.
+    data[0] = SET_PARAM_DATA_TYPE;
+    data[MAJOR_VERSION_POS] = VFILTER_MAJOR_VERSION;
+    data[MINOR_VERSION_POS] = VFILTER_MINOR_VERSION;
+
+    // Fill data.
+    const int paramId = static_cast<int>(id);
+    std::memcpy(&data[COMMAND_ID_POS], &paramId, VALUE_SIZE);
+    std::memcpy(&data[COMMAND_VALUE_POS], &value, VALUE_SIZE);
+    size = SET_PARAM_COMMAND_SIZE;
 }
 
 
 
-void cr::video::VFilter::encodeCommand(uint8_t* data, int& size,
-	VFilterCommand id)
+void cr::video::VFilter::encodeCommand(
+        uint8_t* data, int& size, VFilterCommand id)
 {
-	// Fill header.
-	data[0] = 0x00;
-	data[1] = VFILTER_MAJOR_VERSION;
-	data[2] = VFILTER_MINOR_VERSION;
+    size = 0;
+    if (data == nullptr)
+    {
+        return;
+    }
 
-	// Fill data.
-	int commandId = (int)id;
-	memcpy(&data[3], &commandId, 4);
-	size = 7;
+    // Fill header.
+    data[0] = COMMAND_DATA_TYPE;
+    data[MAJOR_VERSION_POS] = VFILTER_MAJOR_VERSION;
+    data[MINOR_VERSION_POS] = VFILTER_MINOR_VERSION;
+
+    // Fill data.
+    const int commandId = static_cast<int>(id);
+    std::memcpy(&data[COMMAND_ID_POS], &commandId, VALUE_SIZE);
+    size = COMMAND_SIZE;
 }
 
 
 
-int cr::video::VFilter::decodeCommand(uint8_t* data, int size, VFilterParam& paramId,
-	VFilterCommand& commandId, float& value)
+int cr::video::VFilter::decodeCommand(
+        uint8_t* data, int size, VFilterParam& paramId,
+        VFilterCommand& commandId, float& value)
 {
-	// Check size.
-	if (size < 7)
-	{
-		return -1;
-	}
+    // Check the pointer and the size (both commands have the header and ID).
+    if (data == nullptr || size < COMMAND_SIZE)
+    {
+        return -1;
+    }
 
-	// Check version.
-	if (data[1] != VFILTER_MAJOR_VERSION || data[2] != VFILTER_MINOR_VERSION)
-	{
-		return -1;
-	}
+    // Check version.
+    if (data[MAJOR_VERSION_POS] != VFILTER_MAJOR_VERSION ||
+        data[MINOR_VERSION_POS] != VFILTER_MINOR_VERSION)
+    {
+        return -1;
+    }
 
-	// Extract data.
-	int id = 0;
-	memcpy(&id, &data[3], 4);
-	value = 0.0f;
+    // Extract the ID.
+    int rawId = 0;
+    std::memcpy(&rawId, &data[COMMAND_ID_POS], VALUE_SIZE);
 
-	// Check command type.
-	if (data[0] == 0x00)
-	{
-		commandId = static_cast<VFilterCommand> (id);
-		return 0;
-	}
-	else if (data[0] == 0x01)
-	{
-		// Check size.
-		if (size != 11)
-		{
-			return false;
-		}
+    // Check command type. The size of each command is fixed: a longer message
+    // is an error. The ID must be in the range of the enum: an unknown ID is
+    // not passed to the implementation. The output arguments are changed only
+    // if the command is decoded.
+    if (data[0] == COMMAND_DATA_TYPE)
+    {
+        if (size != COMMAND_SIZE ||
+            rawId < static_cast<int>(VFilterCommand::RESET) ||
+            rawId > static_cast<int>(VFilterCommand::OFF))
+        {
+            return -1;
+        }
+        commandId = static_cast<VFilterCommand>(rawId);
+        value = 0.0f;
+        return 0;
+    }
+    if (data[0] == SET_PARAM_DATA_TYPE)
+    {
+        if (size != SET_PARAM_COMMAND_SIZE ||
+            rawId < static_cast<int>(VFilterParam::MODE) ||
+            rawId > static_cast<int>(VFilterParam::CUSTOM_3))
+        {
+            return -1;
+        }
+        float paramValue = 0.0f;
+        std::memcpy(&paramValue, &data[COMMAND_VALUE_POS], VALUE_SIZE);
+        paramId = static_cast<VFilterParam>(rawId);
+        value = paramValue;
+        return 1;
+    }
 
-		paramId = static_cast<VFilterParam>(id);
-		memcpy(&value, &data[7], 4);
-		return 1;
-	}
-
-	return -1;
+    return -1;
 }
