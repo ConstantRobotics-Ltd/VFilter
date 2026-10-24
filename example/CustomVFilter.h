@@ -6,9 +6,7 @@
 
 
 
-namespace cr
-{
-namespace video
+namespace rapidpixel
 {
 /**
  * @brief Example of a custom video filter implementation.
@@ -17,7 +15,7 @@ namespace video
  * come from outside (parameters, mask) are validated before use. All methods
  * are protected by one mutex, so the methods can be called from any thread.
  */
-class CustomVFilter : public cr::video::VFilter
+class CustomVFilter : public rapidpixel::VFilter
 {
 public:
 
@@ -106,7 +104,7 @@ public:
      * @param frame Source video frame.
      * @return TRUE if video frame was processed or FALSE if not.
      */
-    bool processFrame(cr::video::Frame& frame) override;
+    bool processFrame(rapidpixel::Frame& frame) override;
 
     /**
      * @brief Set filter mask. Filter omits image segments, where
@@ -116,7 +114,7 @@ public:
      * @return TRUE if video filter mask was set or FALSE if not (the mask is
      * not valid or the memory can not be allocated).
      */
-    bool setMask(cr::video::Frame mask) override;
+    bool setMask(rapidpixel::Frame mask) override;
 
     /**
      * @brief Decode and execute command.
@@ -129,11 +127,10 @@ public:
 private:
 
     /// Parameters structure (default params). Protected by m_paramsMutex.
-    cr::video::VFilterParams m_params;
+    rapidpixel::VFilterParams m_params;
     /// Mask for filter. Protected by m_paramsMutex.
-    cr::video::Frame m_mask;
+    rapidpixel::Frame m_mask;
     /// Mutex to protect m_params and m_mask.
     std::mutex m_paramsMutex;
 };
-}
 }

@@ -62,7 +62,7 @@ bool isLevelValid(float level)
 
 /// Check that the filter params are valid. The type of the filter and the
 /// processing time can have any value, a custom parameter must be finite.
-bool areParamsValid(const cr::video::VFilterParams& params)
+bool areParamsValid(const rapidpixel::VFilterParams& params)
 {
     return isModeValid(params.mode) && isLevelValid(params.level) &&
            std::isfinite(params.custom1) && std::isfinite(params.custom2) &&
@@ -73,7 +73,7 @@ bool areParamsValid(const cr::video::VFilterParams& params)
 
 /// Check that the frame can be used as the filter mask: the frame has data and
 /// has a pixel format supported for the mask.
-bool isMaskValid(const cr::video::Frame& mask)
+bool isMaskValid(const rapidpixel::Frame& mask)
 {
     if (mask.data == nullptr || mask.width <= 0 || mask.height <= 0 ||
         mask.size <= 0)
@@ -82,11 +82,11 @@ bool isMaskValid(const cr::video::Frame& mask)
     }
     switch (mask.fourcc)
     {
-    case cr::video::Fourcc::GRAY:
-    case cr::video::Fourcc::NV12:
-    case cr::video::Fourcc::NV21:
-    case cr::video::Fourcc::YV12:
-    case cr::video::Fourcc::YU12:
+    case rapidpixel::Fourcc::GRAY:
+    case rapidpixel::Fourcc::NV12:
+    case rapidpixel::Fourcc::NV21:
+    case rapidpixel::Fourcc::YV12:
+    case rapidpixel::Fourcc::YU12:
     {
         return true;
     }
@@ -100,22 +100,22 @@ bool isMaskValid(const cr::video::Frame& mask)
 
 
 
-cr::video::CustomVFilter::CustomVFilter() = default;
+rapidpixel::CustomVFilter::CustomVFilter() = default;
 
 
 
-cr::video::CustomVFilter::~CustomVFilter() = default;
+rapidpixel::CustomVFilter::~CustomVFilter() = default;
 
 
 
-std::string cr::video::CustomVFilter::getVersion()
+std::string rapidpixel::CustomVFilter::getVersion()
 {
     return CUSTOM_VFILTER_VERSION;
 }
 
 
 
-bool cr::video::CustomVFilter::initVFilter(VFilterParams& params)
+bool rapidpixel::CustomVFilter::initVFilter(VFilterParams& params)
 {
     // Check params: the filter params are not changed if a value is invalid.
     if (!areParamsValid(params))
@@ -133,7 +133,7 @@ bool cr::video::CustomVFilter::initVFilter(VFilterParams& params)
 
 
 
-bool cr::video::CustomVFilter::setParam(VFilterParam id, float value)
+bool rapidpixel::CustomVFilter::setParam(VFilterParam id, float value)
 {
     // Lock mutex for setting parameters.
     const std::lock_guard<std::mutex> lock(m_paramsMutex);
@@ -212,7 +212,7 @@ bool cr::video::CustomVFilter::setParam(VFilterParam id, float value)
 
 
 
-float cr::video::CustomVFilter::getParam(VFilterParam id)
+float rapidpixel::CustomVFilter::getParam(VFilterParam id)
 {
     // Lock mutex for reading parameters.
     const std::lock_guard<std::mutex> lock(m_paramsMutex);
@@ -258,7 +258,7 @@ float cr::video::CustomVFilter::getParam(VFilterParam id)
 
 
 
-void cr::video::CustomVFilter::getParams(VFilterParams& params)
+void rapidpixel::CustomVFilter::getParams(VFilterParams& params)
 {
     // Lock mutex for assigning parameters.
     const std::lock_guard<std::mutex> lock(m_paramsMutex);
@@ -267,7 +267,7 @@ void cr::video::CustomVFilter::getParams(VFilterParams& params)
 
 
 
-bool cr::video::CustomVFilter::executeCommand(VFilterCommand id)
+bool rapidpixel::CustomVFilter::executeCommand(VFilterCommand id)
 {
     // Lock mutex for changing parameters.
     const std::lock_guard<std::mutex> lock(m_paramsMutex);
@@ -297,7 +297,7 @@ bool cr::video::CustomVFilter::executeCommand(VFilterCommand id)
 
 
 
-bool cr::video::CustomVFilter::processFrame(cr::video::Frame&)
+bool rapidpixel::CustomVFilter::processFrame(rapidpixel::Frame&)
 {
     // A real filter processes the frame here according to the mode and the
     // level and returns TRUE without processing if the filter is disabled.
@@ -307,7 +307,7 @@ bool cr::video::CustomVFilter::processFrame(cr::video::Frame&)
 
 
 
-bool cr::video::CustomVFilter::setMask(cr::video::Frame mask)
+bool rapidpixel::CustomVFilter::setMask(rapidpixel::Frame mask)
 {
     // Check the mask.
     if (!isMaskValid(mask))
@@ -331,7 +331,7 @@ bool cr::video::CustomVFilter::setMask(cr::video::Frame mask)
 
 
 
-bool cr::video::CustomVFilter::decodeAndExecuteCommand(
+bool rapidpixel::CustomVFilter::decodeAndExecuteCommand(
         uint8_t* data, int size)
 {
     // Decode command. The decoder checks the pointer, the size, the version

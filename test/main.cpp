@@ -16,11 +16,11 @@
 
 namespace
 {
-using cr::video::VFilter;
-using cr::video::VFilterCommand;
-using cr::video::VFilterParam;
-using cr::video::VFilterParams;
-using cr::video::VFilterParamsMask;
+using rapidpixel::VFilter;
+using rapidpixel::VFilterCommand;
+using rapidpixel::VFilterParam;
+using rapidpixel::VFilterParams;
+using rapidpixel::VFilterParamsMask;
 
 /// Number of fields of VFilterParams.
 constexpr int FIELDS_NUMBER{7};
@@ -906,7 +906,7 @@ bool readWriteJsonTest()
 
     // Save to JSON. The file is removed when the test is finished.
     const FileRemover remover(JSON_FILE_NAME);
-    cr::utils::ConfigReader configReader1;
+    rapidpixel::ConfigReader configReader1;
     if (!configReader1.set(params1, "Params"))
     {
         return fail("Can't set params");
@@ -917,7 +917,7 @@ bool readWriteJsonTest()
     }
 
     // Read params from file.
-    cr::utils::ConfigReader configReader2;
+    rapidpixel::ConfigReader configReader2;
     if (!configReader2.readFromFile(JSON_FILE_NAME))
     {
         return fail("Can't read from file");
@@ -941,7 +941,7 @@ bool readWriteJsonTest()
     }
 
     // A file which does not exist is not read.
-    cr::utils::ConfigReader configReader3;
+    rapidpixel::ConfigReader configReader3;
     if (configReader3.readFromFile("VFilterParamsNoSuchFile.json"))
     {
         return fail("A file which does not exist is read");
@@ -985,7 +985,7 @@ bool readInvalidJsonTest()
     bool result = true;
     for (const char* document : documents)
     {
-        cr::utils::ConfigReader reader;
+        rapidpixel::ConfigReader reader;
         if (reader.readFromString(document) && reader.get(object, "Params"))
         {
             std::cout << "Accepted: " << document << std::endl;
@@ -1001,7 +1001,7 @@ bool readInvalidJsonTest()
 
     // Deeply nested document: rejected without a crash.
     const std::string deep(100000, '[');
-    cr::utils::ConfigReader reader;
+    rapidpixel::ConfigReader reader;
     if (reader.readFromString(deep) && reader.get(object, "Params"))
     {
         std::cout << "Accepted: deeply nested document" << std::endl;

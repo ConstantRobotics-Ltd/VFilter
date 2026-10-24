@@ -6,9 +6,7 @@
 
 
 
-namespace cr
-{
-namespace video
+namespace rapidpixel
 {
 /**
  * @brief Mask for VFilter library params for encoding (serializing).
@@ -237,7 +235,7 @@ public:
      * @param frame Reference to frame (input and result frame).
      * @return TRUE if frame processed or FALSE if not.
      */
-    virtual bool processFrame(cr::video::Frame& frame) = 0;
+    virtual bool processFrame(rapidpixel::Frame& frame) = 0;
 
     /**
      * @brief Set mask for filter.
@@ -246,7 +244,7 @@ public:
      * support pixel formats for mask: GRAY, NV12, NV21, YV12 and YU12.
      * @return TRUE if mask was set or FALSE if not.
      */
-    virtual bool setMask(cr::video::Frame mask) = 0;
+    virtual bool setMask(rapidpixel::Frame mask) = 0;
 
     /**
      * @brief Encode set param command.
@@ -345,5 +343,16 @@ protected:
      */
     VFilter& operator=(VFilter&& src) = default;
 };
+}
+
+
+
+// Compatibility: the names of namespace rapidpixel are also available in
+// namespace cr::video.
+namespace cr
+{
+namespace video
+{
+using namespace ::rapidpixel;
 }
 }

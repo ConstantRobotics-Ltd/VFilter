@@ -103,9 +103,7 @@ example ------------------------ Folder with source code of the custom VFilter i
 The **VFilter** interface class declared in **VFilter.h** file. Class declaration:
 
 ```cpp
-namespace cr
-{
-namespace video
+namespace rapidpixel
 {
 /// Video filter interface class.
 class VFilter
@@ -134,10 +132,10 @@ public:
     virtual bool executeCommand(VFilterCommand id) = 0;
 
     /// Process frame.
-    virtual bool processFrame(cr::video::Frame& frame) = 0;
+    virtual bool processFrame(rapidpixel::Frame& frame) = 0;
 
     /// Set mask for filter.
-    virtual bool setMask(cr::video::Frame mask) = 0;
+    virtual bool setMask(rapidpixel::Frame mask) = 0;
 
     /// Encode set param command.
     static void encodeSetParamCommand(uint8_t* data, int& size,
@@ -171,7 +169,6 @@ protected:
     VFilter& operator=(VFilter&& src) = default;
 };
 }
-}
 ```
 
 
@@ -187,7 +184,7 @@ static std::string getVersion();
 Method can be used without **VFilter** class instance:
 
 ```cpp
-std::cout << "VFilter version: " << cr::video::VFilter::getVersion();
+std::cout << "VFilter version: " << rapidpixel::VFilter::getVersion();
 ```
 
 Console output:
@@ -282,7 +279,7 @@ virtual bool executeCommand(VFilterCommand id) = 0;
 The **processFrame(...)** method designed to process frame. **VFilter** based library should provide thread-safe **processFrame(...)** method call. This means that the **processFrame(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
-virtual bool processFrame(cr::video::Frame& frame) = 0;
+virtual bool processFrame(rapidpixel::Frame& frame) = 0;
 ```
 
 | Parameter | Description                                                  |
@@ -298,7 +295,7 @@ virtual bool processFrame(cr::video::Frame& frame) = 0;
 The **setMask(...)** method designed to set video filter mask. The thread safety of the method is defined by the implementation. Method declaration:
 
 ```c++
-virtual bool setMask(cr::video::Frame mask) = 0;
+virtual bool setMask(rapidpixel::Frame mask) = 0;
 ```
 
 | Parameter | Description                                                  |
@@ -334,8 +331,8 @@ int size = 0;
 // Parameter value.
 float outValue = 20.0f;
 // Encode command.
-cr::video::VFilter::encodeSetParamCommand(
-    data, size, cr::video::VFilterParam::LEVEL, outValue);
+rapidpixel::VFilter::encodeSetParamCommand(
+    data, size, rapidpixel::VFilterParam::LEVEL, outValue);
 ```
 
 
@@ -362,8 +359,8 @@ uint8_t data[7];
 // Size of encoded data.
 int size = 0;
 // Encode command.
-cr::video::VFilter::encodeCommand(
-    data, size, cr::video::VFilterCommand::RESET);
+rapidpixel::VFilter::encodeCommand(
+    data, size, rapidpixel::VFilterCommand::RESET);
 ```
 
 
@@ -580,7 +577,7 @@ Example without parameters mask:
 
 ```cpp
 // Prepare parameters.
-cr::video::VFilterParams params;
+rapidpixel::VFilterParams params;
 params.level = 80.0f;
 
 // Encode (serialize) params.
@@ -597,11 +594,11 @@ Example with parameters mask:
 
 ```cpp
 // Prepare parameters.
-cr::video::VFilterParams params;
+rapidpixel::VFilterParams params;
 params.level = 80.0f;
 
 // Prepare mask.
-cr::video::VFilterParamsMask mask;
+rapidpixel::VFilterParamsMask mask;
 // Exclude level.
 mask.level = false;
 
@@ -636,7 +633,7 @@ Example:
 
 ```cpp
 // Prepare parameters.
-cr::video::VFilterParams params1;
+rapidpixel::VFilterParams params1;
 params1.level = 80.0f;
 
 // Encode (serialize) params.
@@ -649,7 +646,7 @@ if (!params1.encode(buffer, bufferSize, size))
 }
 
 // Decode (deserialize) params.
-cr::video::VFilterParams params2;
+rapidpixel::VFilterParams params2;
 if (!params2.decode(buffer, size))
 {
     std::cout << "Can't decode params" << std::endl;
@@ -664,7 +661,7 @@ if (!params2.decode(buffer, size))
 
 ```cpp
 // Prepare params.
-cr::video::VFilterParams params1;
+rapidpixel::VFilterParams params1;
 params1.mode = 1;
 params1.level = 10.5f;
 params1.processingTimeMcSec = 10;
@@ -674,7 +671,7 @@ params1.custom2 = 23.25f;
 params1.custom3 = 24.5f;
 
 // Save to JSON.
-cr::utils::ConfigReader configReader1;
+rapidpixel::ConfigReader configReader1;
 if (!configReader1.set(params1, "Params"))
 {
     std::cout << "Can't set params" << std::endl;
@@ -685,12 +682,12 @@ if (!configReader1.writeToFile("VFilterParams.json"))
 }
 
 // Read params from file.
-cr::utils::ConfigReader configReader2;
+rapidpixel::ConfigReader configReader2;
 if (!configReader2.readFromFile("VFilterParams.json"))
 {
     std::cout << "Can't read from file" << std::endl;
 }
-cr::video::VFilterParams params2;
+rapidpixel::VFilterParams params2;
 if (!configReader2.get(params2, "Params"))
 {
     std::cout << "Can't get params" << std::endl;
@@ -891,9 +888,7 @@ The serialized data (encoded params and commands) stores int and float values as
 The **VFilter** class provides only an interface, data structures, and methods for encoding and decoding commands and params. To create your own implementation of the video filter, VFilter repository has to be included in your project (see [Build and connect to your project](#build-and-connect-to-your-project) section). The catalogue **example** (see [Library files](#library-files) section) includes an example of the design of the custom VFilter algorithm. All the methods of the VFilter interface class have to be included. Custom VFilter class declaration:
 
 ```cpp
-namespace cr
-{
-namespace video
+namespace rapidpixel
 {
 /**
  * @brief Example of a custom video filter implementation.
@@ -902,7 +897,7 @@ namespace video
  * come from outside (parameters, mask) are validated before use. All methods
  * are protected by one mutex, so the methods can be called from any thread.
  */
-class CustomVFilter : public cr::video::VFilter
+class CustomVFilter : public rapidpixel::VFilter
 {
 public:
 
@@ -991,7 +986,7 @@ public:
      * @param frame Source video frame.
      * @return TRUE if video frame was processed or FALSE if not.
      */
-    bool processFrame(cr::video::Frame& frame) override;
+    bool processFrame(rapidpixel::Frame& frame) override;
 
     /**
      * @brief Set filter mask. Filter omits image segments, where
@@ -1001,7 +996,7 @@ public:
      * @return TRUE if video filter mask was set or FALSE if not (the mask is
      * not valid or the memory can not be allocated).
      */
-    bool setMask(cr::video::Frame mask) override;
+    bool setMask(rapidpixel::Frame mask) override;
 
     /**
      * @brief Decode and execute command.
@@ -1014,12 +1009,11 @@ public:
 private:
 
     /// Parameters structure (default params). Protected by m_paramsMutex.
-    cr::video::VFilterParams m_params;
+    rapidpixel::VFilterParams m_params;
     /// Mask for filter. Protected by m_paramsMutex.
-    cr::video::Frame m_mask;
+    rapidpixel::Frame m_mask;
     /// Mutex to protect m_params and m_mask.
     std::mutex m_paramsMutex;
 };
-}
 }
 ```

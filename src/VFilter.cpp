@@ -84,7 +84,7 @@ uint8_t maskBit(int index)
 /// The same table is used by the encoder and by the decoder, so the format
 /// cannot diverge.
 std::array<void*, FIELDS_NUMBER> makeFieldTable(
-        cr::video::VFilterParams& params)
+        rapidpixel::VFilterParams& params)
 {
     return {{&params.mode, &params.level, &params.processingTimeMcSec,
              &params.type, &params.custom1, &params.custom2,
@@ -95,7 +95,7 @@ std::array<void*, FIELDS_NUMBER> makeFieldTable(
 
 /// Get the table of the mask flags in the order of the field table.
 std::array<bool, FIELDS_NUMBER> makeMaskTable(
-        const cr::video::VFilterParamsMask& mask)
+        const rapidpixel::VFilterParamsMask& mask)
 {
     return {{mask.mode, mask.level, mask.processingTimeMcSec, mask.type,
              mask.custom1, mask.custom2, mask.custom3}};
@@ -104,8 +104,8 @@ std::array<bool, FIELDS_NUMBER> makeMaskTable(
 
 
 
-bool cr::video::VFilterParams::encode(uint8_t* data, int bufferSize, int& size,
-                                      VFilterParamsMask* mask)
+bool rapidpixel::VFilterParams::encode(uint8_t* data, int bufferSize, int& size,
+                                       VFilterParamsMask* mask)
 {
     // Check the pointer and the buffer size (the buffer must be able to store
     // all fields: the size of the encoded data depends on the mask).
@@ -150,7 +150,7 @@ bool cr::video::VFilterParams::encode(uint8_t* data, int bufferSize, int& size,
 
 
 
-bool cr::video::VFilterParams::decode(uint8_t* data, int dataSize)
+bool rapidpixel::VFilterParams::decode(uint8_t* data, int dataSize)
 {
     // Check the pointer and the size (the header must be complete).
     if (data == nullptr || dataSize < PARAMS_HEADER_SIZE)
@@ -208,18 +208,18 @@ bool cr::video::VFilterParams::decode(uint8_t* data, int dataSize)
 
 
 
-cr::video::VFilter::~VFilter() = default;
+rapidpixel::VFilter::~VFilter() = default;
 
 
 
-std::string cr::video::VFilter::getVersion()
+std::string rapidpixel::VFilter::getVersion()
 {
     return VFILTER_VERSION;
 }
 
 
 
-void cr::video::VFilter::encodeSetParamCommand(
+void rapidpixel::VFilter::encodeSetParamCommand(
         uint8_t* data, int& size, VFilterParam id, float value)
 {
     size = 0;
@@ -242,7 +242,7 @@ void cr::video::VFilter::encodeSetParamCommand(
 
 
 
-void cr::video::VFilter::encodeCommand(
+void rapidpixel::VFilter::encodeCommand(
         uint8_t* data, int& size, VFilterCommand id)
 {
     size = 0;
@@ -264,7 +264,7 @@ void cr::video::VFilter::encodeCommand(
 
 
 
-int cr::video::VFilter::decodeCommand(
+int rapidpixel::VFilter::decodeCommand(
         uint8_t* data, int size, VFilterParam& paramId,
         VFilterCommand& commandId, float& value)
 {
