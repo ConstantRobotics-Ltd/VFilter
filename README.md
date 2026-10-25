@@ -657,7 +657,7 @@ if (!params2.decode(buffer, size))
 
 ## Read params from JSON file and write to JSON file
 
-**VFilter** depends on open source [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides method to read params from JSON file and to write params to JSON file. The **readFromFile(...)** method returns false if the file does not exist or is not valid JSON. The **get(...)** method returns false and does not change the object if a parameter is missing or a parameter has a wrong type or a value out of range of the field (for example a string instead of a number). A real number in JSON is truncated if the field is int. Example of writing and reading params to JSON file:
+**VFilter** depends on the [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides method to read params from JSON file and to write params to JSON file. The **readFromFile(...)** method returns false if the file does not exist or is not valid JSON. The **get(...)** method returns false and does not change the object if a parameter is missing or a parameter has a wrong type or a value out of range of the field (for example a string instead of a number). A real number in JSON is truncated if the field is int. Example of writing and reading params to JSON file:
 
 ```cpp
 // Prepare params.
