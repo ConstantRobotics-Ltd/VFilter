@@ -48,6 +48,8 @@
 
 **VFilter** C++ library provides interface as well defines data structures for various video filters implementations. The **VFilter** interface represents video filter module which has video frames as input and output. The **VFilter.h** file contains declaration of data structures: [VFilterCommand](#vfiltercommand-enum) enum, [VFilterParam](#vfilterparam-enum) enum, [VFilterParams](#vfilterparams-class-declaration) class and [VFilter](#vfilter-interface-class-declaration) class declaration. The library depends on [Frame](https://rapidpixel.constantrobotics.com/docs/Service/Frame.html) library (describes data structures for video frames) and [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library (provides methods to read/write JSON config files). The repository does not contain these libraries: they must be cloned next to the **VFilter** repository (see [Build and connect to your project](#build-and-connect-to-your-project) section). The library uses C++17 standard, compatible with Linux and Windows and doesn't have third-party dependencies to be installed in OS.
 
+**VFilter** is general-purpose software: it is not tied to any sector or application, and the developer of a program decides what the program does with it.
+
 
 
 # Versions
