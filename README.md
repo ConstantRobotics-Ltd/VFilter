@@ -46,7 +46,7 @@
 
 # Overview
 
-**VFilter** C++ library provides interface as well defines data structures for various video filters implementations. The **VFilter** interface represents video filter module which has video frames as input and output. The **VFilter.h** file contains declaration of data structures: [VFilterCommand](#vfiltercommand-enum) enum, [VFilterParam](#vfilterparam-enum) enum, [VFilterParams](#vfilterparams-class-declaration) class and [VFilter](#vfilter-interface-class-declaration) class declaration. The library depends on [Frame](https://rapidpixel.constantrobotics.com/docs/Service/Frame.html) library (describes data structures for video frames) and [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library (provides methods to read/write JSON config files). The repository does not contain these libraries: they must be cloned next to the **VFilter** repository (see [Build and connect to your project](#build-and-connect-to-your-project) section). The library uses C++17 standard, compatible with Linux and Windows and doesn't have third-party dependencies to be installed in OS.
+**VFilter** C++ library provides interface as well defines data structures for various video filters implementations. The **VFilter** interface represents video filter module which has video frames as input and output. The **VFilter.h** file contains declaration of data structures: [VFilterCommand](#vfiltercommand-enum) enum, [VFilterParam](#vfilterparam-enum) enum, [VFilterParams](#vfilterparams-class-declaration) class and [VFilter](#vfilter-interface-class-declaration) class declaration. The library depends on [Frame](https://rapidpixel.constantrobotics.com/docs/Service/Frame.html) library (describes data structures for video frames) and [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library (provides methods to read/write JSON config files). The repository does not contain these libraries: their folders must be copied next to the **VFilter** repository (see [Build and connect to your project](#build-and-connect-to-your-project) section). The library uses C++17 standard, compatible with Linux and Windows and doesn't have third-party dependencies to be installed in OS.
 
 **VFilter** is general-purpose software: it is not tied to any sector or application, and the developer of a program decides what the program does with it.
 
@@ -719,7 +719,7 @@ if (!configReader2.get(params2, "Params"))
 
 ## Build stand alone
 
-The repository does not contain sub-repositories. The libraries **VFilter** depends on (**Frame** and **ConfigReader**) must be cloned into the same folder as **VFilter**. The folder structure must be:
+The repository does not contain sub-repositories. The libraries **VFilter** depends on (**Frame** and **ConfigReader**) must be placed in the same folder as **VFilter**: copy their folders, for example from the folder **modules** of the RapidPixel SDK. The folder structure must be:
 
 ```bash
 <work folder>
@@ -728,12 +728,9 @@ The repository does not contain sub-repositories. The libraries **VFilter** depe
     ConfigReader
 ```
 
-Typical commands to build the library, the test application and the example (use the URLs of the repositories provided to you):
+Typical commands to build the library, the test application and the example:
 
 ```bash
-git clone <VFilter repository URL>
-git clone <Frame repository URL>
-git clone <ConfigReader repository URL>
 cd VFilter
 mkdir build
 cd build
@@ -771,7 +768,7 @@ src
     yourLib.cpp
 ```
 
-Clone (or copy) the **VFilter**, **Frame** and **ConfigReader** repositories to **3rdparty** folder of your repository. Structure of your repository:
+Create folder **3rdparty** in your repository and copy the folders of the libraries **Frame**, **ConfigReader** and **VFilter** there (for example from the folder **modules** of the RapidPixel SDK). Structure of your repository:
 
 ```bash
 CMakeLists.txt
