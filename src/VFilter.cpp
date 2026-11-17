@@ -50,31 +50,35 @@ static_assert(SET_PARAM_COMMAND_SIZE == 11,
               "wrong size of the encoded set param command");
 
 /// Number of fields of VFilterParams in the encoded params.
-constexpr int FIELDS_NUMBER{7};
-/// Position of the mask in the encoded params. The mask has one byte.
+constexpr int FIELDS_NUMBER{13};
+/// Position of the mask in the encoded params. The mask has two bytes: the
+/// most significant byte first, independent of the byte order of the host.
 constexpr int PARAMS_MASK_POS{3};
+/// Size of the mask in the encoded params, bytes.
+constexpr int PARAMS_MASK_SIZE{2};
 /// Size of the encoded params header: data type, version and mask.
-constexpr int PARAMS_HEADER_SIZE{PARAMS_MASK_POS + 1};
+constexpr int PARAMS_HEADER_SIZE{PARAMS_MASK_POS + PARAMS_MASK_SIZE};
 /// Maximum size of the encoded params (all fields are encoded).
 constexpr int PARAMS_MAX_SIZE{PARAMS_HEADER_SIZE + FIELDS_NUMBER * VALUE_SIZE};
-static_assert(PARAMS_MAX_SIZE == 32, "wrong size of the encoded params");
+static_assert(PARAMS_MAX_SIZE == 57, "wrong size of the encoded params");
 
 /// Bit of the mask which belongs to the first field. The bit of the next field
 /// is the next less significant one.
-constexpr int FIRST_MASK_BIT{0x80};
-/// Bits of the mask byte which do not belong to any field. The encoder writes
-/// zero, the decoder rejects the data with such a bit set: the data was not
-/// produced by the encoder.
-constexpr uint8_t RESERVED_MASK_BITS{0x01};
-static_assert(((FIRST_MASK_BIT >> (FIELDS_NUMBER - 1)) >> 1) ==
+constexpr uint16_t FIRST_MASK_BIT{0x8000};
+static_assert(FIELDS_NUMBER <= 16, "all fields must fit in the mask");
+/// Bits of the mask which do not belong to any field: all bits below the bit
+/// of the last field. The encoder writes zero, the decoder rejects the data
+/// with such a bit set: the data was not produced by the encoder.
+constexpr uint16_t RESERVED_MASK_BITS{0x0007};
+static_assert(((FIRST_MASK_BIT >> (FIELDS_NUMBER - 1)) - 1) ==
               RESERVED_MASK_BITS, "wrong reserved bits of the mask");
 
 
 
 /// Get the mask bit of the field with the given index in the field table.
-uint8_t maskBit(int index)
+uint16_t maskBit(int index)
 {
-    return static_cast<uint8_t>(FIRST_MASK_BIT >> index);
+    return static_cast<uint16_t>(FIRST_MASK_BIT >> index);
 }
 
 
@@ -87,8 +91,10 @@ std::array<void*, FIELDS_NUMBER> makeFieldTable(
         rapidpixel::VFilterParams& params)
 {
     return {{&params.mode, &params.level, &params.processingTimeMcSec,
-             &params.type, &params.custom1, &params.custom2,
-             &params.custom3}};
+             &params.type, &params.palette, &params.numThreads,
+             &params.backend, &params.custom1, &params.custom2,
+             &params.custom3, &params.custom4, &params.custom5,
+             &params.custom6}};
 }
 
 
@@ -98,7 +104,9 @@ std::array<bool, FIELDS_NUMBER> makeMaskTable(
         const rapidpixel::VFilterParamsMask& mask)
 {
     return {{mask.mode, mask.level, mask.processingTimeMcSec, mask.type,
-             mask.custom1, mask.custom2, mask.custom3}};
+             mask.palette, mask.numThreads, mask.backend,
+             mask.custom1, mask.custom2, mask.custom3,
+             mask.custom4, mask.custom5, mask.custom6}};
 }
 }
 
@@ -130,7 +138,7 @@ bool rapidpixel::VFilterParams::encode(uint8_t* data, int bufferSize, int& size,
     // Copy selected params to the buffer and fill the bit mask for them.
     const auto fields = makeFieldTable(*this);
     const auto selected = makeMaskTable(paramsMask);
-    uint8_t maskByte = 0x00;
+    uint16_t maskBits = 0x0000;
     int pos = PARAMS_HEADER_SIZE;
     for (int i = 0; i < FIELDS_NUMBER; ++i)
     {
@@ -138,11 +146,12 @@ bool rapidpixel::VFilterParams::encode(uint8_t* data, int bufferSize, int& size,
         {
             continue;
         }
-        maskByte = static_cast<uint8_t>(maskByte | maskBit(i));
+        maskBits = static_cast<uint16_t>(maskBits | maskBit(i));
         std::memcpy(&data[pos], fields[static_cast<size_t>(i)], VALUE_SIZE);
         pos += VALUE_SIZE;
     }
-    data[PARAMS_MASK_POS] = maskByte;
+    data[PARAMS_MASK_POS] = static_cast<uint8_t>(maskBits >> 8);
+    data[PARAMS_MASK_POS + 1] = static_cast<uint8_t>(maskBits & 0xFF);
     size = pos;
 
     return true;
@@ -165,8 +174,9 @@ bool rapidpixel::VFilterParams::decode(uint8_t* data, int dataSize)
     {
         return false;
     }
-    const uint8_t maskByte = data[PARAMS_MASK_POS];
-    if ((maskByte & RESERVED_MASK_BITS) != 0)
+    const uint16_t maskBits = static_cast<uint16_t>(
+            (data[PARAMS_MASK_POS] << 8) | data[PARAMS_MASK_POS + 1]);
+    if ((maskBits & RESERVED_MASK_BITS) != 0)
     {
         return false;
     }
@@ -179,7 +189,7 @@ bool rapidpixel::VFilterParams::decode(uint8_t* data, int dataSize)
     for (int i = 0; i < FIELDS_NUMBER; ++i)
     {
         void* field = fields[static_cast<size_t>(i)];
-        if ((maskByte & maskBit(i)) == 0)
+        if ((maskBits & maskBit(i)) == 0)
         {
             std::memset(field, 0, VALUE_SIZE);
             continue;
@@ -305,7 +315,7 @@ int rapidpixel::VFilter::decodeCommand(
     {
         if (size != SET_PARAM_COMMAND_SIZE ||
             rawId < static_cast<int>(VFilterParam::MODE) ||
-            rawId > static_cast<int>(VFilterParam::CUSTOM_3))
+            rawId > static_cast<int>(VFilterParam::CUSTOM_6))
         {
             return -1;
         }

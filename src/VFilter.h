@@ -24,12 +24,24 @@ struct VFilterParamsMask
     bool processingTimeMcSec{true};
     /// Serialize type field.
     bool type{true};
+    /// Serialize palette field.
+    bool palette{true};
+    /// Serialize numThreads field.
+    bool numThreads{true};
+    /// Serialize backend field.
+    bool backend{true};
     /// Serialize custom1 field.
     bool custom1{true};
     /// Serialize custom2 field.
     bool custom2{true};
     /// Serialize custom3 field.
     bool custom3{true};
+    /// Serialize custom4 field.
+    bool custom4{true};
+    /// Serialize custom5 field.
+    bool custom5{true};
+    /// Serialize custom6 field.
+    bool custom6{true};
 };
 
 
@@ -57,6 +69,12 @@ public:
     int processingTimeMcSec{0};
     /// Type of the filter. Depends on the implementation.
     int type{0};
+    /// Color palette used by the filter. Depends on the implementation.
+    int palette{0};
+    /// Number of threads used by the filter. Depends on the implementation.
+    int numThreads{0};
+    /// Backend used by the filter. Depends on the implementation.
+    int backend{0};
     /// VFilter custom parameter. Custom parameters used when particular image
     /// filter has specific unusual parameter.
     float custom1{0.0f};
@@ -66,20 +84,29 @@ public:
     /// VFilter custom parameter. Custom parameters used when particular image
     /// filter has specific unusual parameter.
     float custom3{0.0f};
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    float custom4{0.0f};
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    float custom5{0.0f};
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    float custom6{0.0f};
 
     /// Macro from ConfigReader to make params readable / writable from JSON.
-    JSON_READABLE(VFilterParams, mode, level, type, custom1, custom2, custom3)
+    JSON_READABLE(VFilterParams, mode, level, type, palette, numThreads, backend, custom1, custom2, custom3, custom4, custom5, custom6)
 
     /**
      * @brief Encode (serialize) params.
      *
      * Integer and float fields are stored as raw 4 bytes values in the byte
-     * order of the host. The size of the encoded data is 4 bytes of header
+     * order of the host. The size of the encoded data is 5 bytes of header
      * plus 4 bytes for each field selected by the mask.
      *
      * @param data Pointer to buffer to store serialized params. Must not be
      * nullptr. The buffer must be valid for bufferSize bytes.
-     * @param bufferSize Size of buffer, bytes. Must be >= 32 bytes (size of
+     * @param bufferSize Size of buffer, bytes. Must be >= 57 bytes (size of
      * the encoded data with all fields selected).
      * @param size Size of encoded (serialized) data, bytes. Will be
      * <= bufferSize. Set to 0 if the method fails.
@@ -88,7 +115,7 @@ public:
      * encoded.
      * @return TRUE if params encoded (serialized) or FALSE if:
      * 1. data is nullptr.
-     * 2. bufferSize less than 32.
+     * 2. bufferSize less than 57.
      * If FALSE is returned nothing is written to the buffer.
      */
     bool encode(uint8_t* data, int bufferSize, int& size,
@@ -118,8 +145,8 @@ public:
 /**
  * @brief Enum of VFilter params.
  *
- * CUSTOM_3 is the last value: VFilter::decodeCommand(...) accepts the IDs
- * from MODE to CUSTOM_3.
+ * CUSTOM_6 is the last value: VFilter::decodeCommand(...) accepts the IDs
+ * from MODE to CUSTOM_6.
  */
 enum class VFilterParam
 {
@@ -132,6 +159,12 @@ enum class VFilterParam
     PROCESSING_TIME_MCSEC,
     /// Type of the filter. Depends on the implementation.
     TYPE,
+    /// Color palette used by the filter. Depends on the implementation.
+    PALETTE,
+    /// Number of threads used by the filter. Depends on the implementation.
+    NUM_THREADS,
+    /// Backend used by the filter. Depends on the implementation.
+    BACKEND,
     /// VFilter custom parameter. Custom parameters used when particular image
     /// filter has specific unusual parameter.
     CUSTOM_1,
@@ -140,7 +173,16 @@ enum class VFilterParam
     CUSTOM_2,
     /// VFilter custom parameter. Custom parameters used when particular image
     /// filter has specific unusual parameter.
-    CUSTOM_3
+    CUSTOM_3,
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    CUSTOM_4,
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    CUSTOM_5,
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    CUSTOM_6
 };
 
 

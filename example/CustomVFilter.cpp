@@ -60,13 +60,15 @@ bool isLevelValid(float level)
 
 
 
-/// Check that the filter params are valid. The type of the filter and the
-/// processing time can have any value, a custom parameter must be finite.
+/// Check that the filter params are valid. The type of the filter, the palette,
+/// the number of threads, the backend and the processing time can have any
+/// value, a custom parameter must be finite.
 bool areParamsValid(const rapidpixel::VFilterParams& params)
 {
     return isModeValid(params.mode) && isLevelValid(params.level) &&
            std::isfinite(params.custom1) && std::isfinite(params.custom2) &&
-           std::isfinite(params.custom3);
+           std::isfinite(params.custom3) && std::isfinite(params.custom4) &&
+           std::isfinite(params.custom5) && std::isfinite(params.custom6);
 }
 
 
@@ -175,6 +177,36 @@ bool rapidpixel::CustomVFilter::setParam(VFilterParam id, float value)
         m_params.type = type;
         return true;
     }
+    case VFilterParam::PALETTE:
+    {
+        int palette = 0;
+        if (!toInt(value, palette))
+        {
+            return false;
+        }
+        m_params.palette = palette;
+        return true;
+    }
+    case VFilterParam::NUM_THREADS:
+    {
+        int numThreads = 0;
+        if (!toInt(value, numThreads))
+        {
+            return false;
+        }
+        m_params.numThreads = numThreads;
+        return true;
+    }
+    case VFilterParam::BACKEND:
+    {
+        int backend = 0;
+        if (!toInt(value, backend))
+        {
+            return false;
+        }
+        m_params.backend = backend;
+        return true;
+    }
     case VFilterParam::CUSTOM_1:
     {
         // Custom parameter.
@@ -203,6 +235,36 @@ bool rapidpixel::CustomVFilter::setParam(VFilterParam id, float value)
             return false;
         }
         m_params.custom3 = value;
+        return true;
+    }
+    case VFilterParam::CUSTOM_4:
+    {
+        // Custom parameter.
+        if (!std::isfinite(value))
+        {
+            return false;
+        }
+        m_params.custom4 = value;
+        return true;
+    }
+    case VFilterParam::CUSTOM_5:
+    {
+        // Custom parameter.
+        if (!std::isfinite(value))
+        {
+            return false;
+        }
+        m_params.custom5 = value;
+        return true;
+    }
+    case VFilterParam::CUSTOM_6:
+    {
+        // Custom parameter.
+        if (!std::isfinite(value))
+        {
+            return false;
+        }
+        m_params.custom6 = value;
         return true;
     }
     }
@@ -236,6 +298,18 @@ float rapidpixel::CustomVFilter::getParam(VFilterParam id)
     {
         return static_cast<float>(m_params.type);
     }
+    case VFilterParam::PALETTE:
+    {
+        return static_cast<float>(m_params.palette);
+    }
+    case VFilterParam::NUM_THREADS:
+    {
+        return static_cast<float>(m_params.numThreads);
+    }
+    case VFilterParam::BACKEND:
+    {
+        return static_cast<float>(m_params.backend);
+    }
     case VFilterParam::CUSTOM_1:
     {
         // Custom parameter.
@@ -250,6 +324,21 @@ float rapidpixel::CustomVFilter::getParam(VFilterParam id)
     {
         // Custom parameter.
         return m_params.custom3;
+    }
+    case VFilterParam::CUSTOM_4:
+    {
+        // Custom parameter.
+        return m_params.custom4;
+    }
+    case VFilterParam::CUSTOM_5:
+    {
+        // Custom parameter.
+        return m_params.custom5;
+    }
+    case VFilterParam::CUSTOM_6:
+    {
+        // Custom parameter.
+        return m_params.custom6;
     }
     }
 

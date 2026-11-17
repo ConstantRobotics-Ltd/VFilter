@@ -23,17 +23,28 @@ using rapidpixel::VFilterParams;
 using rapidpixel::VFilterParamsMask;
 
 /// Number of fields of VFilterParams.
-constexpr int FIELDS_NUMBER{7};
+constexpr int FIELDS_NUMBER{13};
 /// Size of the encoded params with all fields, bytes.
-constexpr int PARAMS_MAX_SIZE{32};
+constexpr int PARAMS_MAX_SIZE{57};
 /// Size of the encoded params header (data type, version, mask), bytes.
-constexpr int PARAMS_HEADER_SIZE{4};
+constexpr int PARAMS_HEADER_SIZE{5};
+/// Position of the mask (2 bytes, most significant byte first) in the encoded
+/// params.
+constexpr int PARAMS_MASK_POS{3};
+/// Number of the mask values: the mask has 16 bits.
+constexpr int MASK_VALUES_NUMBER{0x10000};
+/// Bits of the mask which do not belong to any field.
+constexpr int RESERVED_MASK_BITS{0x0007};
 /// Size of the encoded action command, bytes.
 constexpr int COMMAND_SIZE{7};
 /// Size of the encoded set param command, bytes.
 constexpr int SET_PARAM_COMMAND_SIZE{11};
+/// Maximum number of the trailing bytes in the decode invalid data test.
+constexpr int TRAILING_BYTES_MAX{8};
 /// Size of the buffers used by the tests, bytes.
-constexpr int BUFFER_SIZE{64};
+constexpr int BUFFER_SIZE{128};
+static_assert(BUFFER_SIZE >= PARAMS_MAX_SIZE + TRAILING_BYTES_MAX,
+              "the buffer must store the params with the trailing bytes");
 /// Byte used to fill buffers: a write of the library is detected as a change.
 constexpr uint8_t CANARY{0xAA};
 /// Number of the random masks in the encode / decode test.
@@ -126,9 +137,15 @@ VFilterParams randomParams()
     params.level = randomFloat();
     params.processingTimeMcSec = static_cast<int>(randomBits());
     params.type = static_cast<int>(randomBits());
+    params.palette = static_cast<int>(randomBits());
+    params.numThreads = static_cast<int>(randomBits());
+    params.backend = static_cast<int>(randomBits());
     params.custom1 = randomFloat();
     params.custom2 = randomFloat();
     params.custom3 = randomFloat();
+    params.custom4 = randomFloat();
+    params.custom5 = randomFloat();
+    params.custom6 = randomFloat();
     return params;
 }
 
@@ -142,9 +159,15 @@ VFilterParamsMask randomMask()
     mask.level = randomInt(2) == 0;
     mask.processingTimeMcSec = randomInt(2) == 0;
     mask.type = randomInt(2) == 0;
+    mask.palette = randomInt(2) == 0;
+    mask.numThreads = randomInt(2) == 0;
+    mask.backend = randomInt(2) == 0;
     mask.custom1 = randomInt(2) == 0;
     mask.custom2 = randomInt(2) == 0;
     mask.custom3 = randomInt(2) == 0;
+    mask.custom4 = randomInt(2) == 0;
+    mask.custom5 = randomInt(2) == 0;
+    mask.custom6 = randomInt(2) == 0;
     return mask;
 }
 
@@ -154,7 +177,49 @@ VFilterParamsMask randomMask()
 std::array<bool, FIELDS_NUMBER> flagsOf(const VFilterParamsMask& mask)
 {
     return {{mask.mode, mask.level, mask.processingTimeMcSec, mask.type,
-             mask.custom1, mask.custom2, mask.custom3}};
+             mask.palette, mask.numThreads, mask.backend,
+             mask.custom1, mask.custom2, mask.custom3,
+             mask.custom4, mask.custom5, mask.custom6}};
+}
+
+
+
+/// Get the mask bits written in the encoded params.
+int maskBitsOf(const std::array<uint8_t, BUFFER_SIZE>& data)
+{
+    return (data[PARAMS_MASK_POS] << 8) | data[PARAMS_MASK_POS + 1];
+}
+
+
+
+/// Write the mask bits into the encoded params.
+void setMaskBits(std::array<uint8_t, BUFFER_SIZE>& data, int maskBits)
+{
+    data[PARAMS_MASK_POS] = static_cast<uint8_t>((maskBits >> 8) & 0xFF);
+    data[PARAMS_MASK_POS + 1] = static_cast<uint8_t>(maskBits & 0xFF);
+}
+
+
+
+/// Get the mask structure from the mask bits of the encoded params. The first
+/// field has the most significant bit.
+VFilterParamsMask maskOf(int maskBits)
+{
+    VFilterParamsMask mask;
+    mask.mode = (maskBits & 0x8000) != 0;
+    mask.level = (maskBits & 0x4000) != 0;
+    mask.processingTimeMcSec = (maskBits & 0x2000) != 0;
+    mask.type = (maskBits & 0x1000) != 0;
+    mask.palette = (maskBits & 0x0800) != 0;
+    mask.numThreads = (maskBits & 0x0400) != 0;
+    mask.backend = (maskBits & 0x0200) != 0;
+    mask.custom1 = (maskBits & 0x0100) != 0;
+    mask.custom2 = (maskBits & 0x0080) != 0;
+    mask.custom3 = (maskBits & 0x0040) != 0;
+    mask.custom4 = (maskBits & 0x0020) != 0;
+    mask.custom5 = (maskBits & 0x0010) != 0;
+    mask.custom6 = (maskBits & 0x0008) != 0;
+    return mask;
 }
 
 
@@ -200,9 +265,16 @@ int compareParams(const VFilterParams& in, const VFilterParams& out,
     checkField("processingTimeMcSec", in.processingTimeMcSec,
                out.processingTimeMcSec, mask.processingTimeMcSec, errors);
     checkField("type", in.type, out.type, mask.type, errors);
+    checkField("palette", in.palette, out.palette, mask.palette, errors);
+    checkField("numThreads", in.numThreads, out.numThreads, mask.numThreads,
+               errors);
+    checkField("backend", in.backend, out.backend, mask.backend, errors);
     checkField("custom1", in.custom1, out.custom1, mask.custom1, errors);
     checkField("custom2", in.custom2, out.custom2, mask.custom2, errors);
     checkField("custom3", in.custom3, out.custom3, mask.custom3, errors);
+    checkField("custom4", in.custom4, out.custom4, mask.custom4, errors);
+    checkField("custom5", in.custom5, out.custom5, mask.custom5, errors);
+    checkField("custom6", in.custom6, out.custom6, mask.custom6, errors);
     return errors;
 }
 
@@ -347,7 +419,7 @@ bool copyParametersTest()
 
 
 
-/// Encode and decode with all fields: the size is 32 bytes.
+/// Encode and decode with all fields: the size is 57 bytes.
 bool encodeDecodeTestWithoutMask()
 {
     VFilterParams params1 = randomParams();
@@ -389,7 +461,7 @@ bool encodeDecodeTestWithoutMask()
 
 
 
-/// Encode and decode with random masks: size, mask byte and fields.
+/// Encode and decode with random masks: size, mask and fields.
 bool encodeDecodeTestWithMask()
 {
     for (int i = 0; i < RANDOM_MASKS_NUMBER; ++i)
@@ -406,6 +478,11 @@ bool encodeDecodeTestWithMask()
         if (size != PARAMS_HEADER_SIZE + 4 * selectedNumber(mask))
         {
             return fail("Wrong size of the encoded params");
+        }
+        if (flagsOf(maskOf(maskBitsOf(buffer))) != flagsOf(mask) ||
+            (maskBitsOf(buffer) & RESERVED_MASK_BITS) != 0)
+        {
+            return fail("Wrong mask in the encoded params");
         }
         if (!isCanary(buffer, static_cast<size_t>(size)))
         {
@@ -561,7 +638,7 @@ bool decodeInvalidDataTest()
     }
 
     // Trailing bytes.
-    for (int extra = 1; extra <= 8; ++extra)
+    for (int extra = 1; extra <= TRAILING_BYTES_MAX; ++extra)
     {
         checker.check(valid.data(), validSize + extra, "trailing bytes");
     }
@@ -586,8 +663,9 @@ bool decodeInvalidDataTest()
 
 
 
-/// Every value of the mask byte: the size must be equal to the size defined
-/// by the mask, bit 0 is not assigned to any field and must be zero.
+/// Every value of the mask: the size must be equal to the size defined by the
+/// mask, the bits below the bit of the last field (0x0007) are not assigned to
+/// any field and must be zero.
 bool decodeMaskTest()
 {
     std::array<uint8_t, BUFFER_SIZE> valid;
@@ -600,17 +678,13 @@ bool decodeMaskTest()
 
     RejectChecker checker;
     bool result = true;
-    for (int mask = 0; mask < 256; ++mask)
+    for (int mask = 0; mask < MASK_VALUES_NUMBER; ++mask)
     {
         std::array<uint8_t, BUFFER_SIZE> data = valid;
-        data[3] = static_cast<uint8_t>(mask);
-        int fields = 0;
-        for (int bit = 1; bit < 8; ++bit)
-        {
-            fields += ((mask >> bit) & 1) != 0 ? 1 : 0;
-        }
+        setMaskBits(data, mask);
+        const int fields = selectedNumber(maskOf(mask));
         const int exactSize = PARAMS_HEADER_SIZE + 4 * fields;
-        if ((mask & 1) != 0)
+        if ((mask & RESERVED_MASK_BITS) != 0)
         {
             checker.check(data.data(), exactSize, "reserved mask bit");
             continue;
@@ -678,14 +752,7 @@ bool damagedDataTest()
 
         // Accepted data must be what the encoder produces for the decoded
         // object and the mask of the data.
-        VFilterParamsMask dataMask;
-        dataMask.mode = (data[3] & 0x80) != 0;
-        dataMask.level = (data[3] & 0x40) != 0;
-        dataMask.processingTimeMcSec = (data[3] & 0x20) != 0;
-        dataMask.type = (data[3] & 0x10) != 0;
-        dataMask.custom1 = (data[3] & 0x08) != 0;
-        dataMask.custom2 = (data[3] & 0x04) != 0;
-        dataMask.custom3 = (data[3] & 0x02) != 0;
+        VFilterParamsMask dataMask = maskOf(maskBitsOf(data));
         std::array<uint8_t, BUFFER_SIZE> encoded;
         fillCanary(encoded);
         int encodedSize = 0;
@@ -710,7 +777,7 @@ bool commandsTest()
 {
     // Set param command for every parameter ID.
     for (int id = static_cast<int>(VFilterParam::MODE);
-         id <= static_cast<int>(VFilterParam::CUSTOM_3); ++id)
+         id <= static_cast<int>(VFilterParam::CUSTOM_6); ++id)
     {
         for (int k = 0; k < 100; ++k)
         {
@@ -851,10 +918,10 @@ bool commandsInvalidDataTest()
         }
     }
 
-    // IDs which are not in the VFilterParam enum (1 - 7) and in the
+    // IDs which are not in the VFilterParam enum (1 - 13) and in the
     // VFilterCommand enum (1 - 3).
     const std::array<int, 6> badParamIds{
-        {std::numeric_limits<int>::min(), -1, 0, 8, 100,
+        {std::numeric_limits<int>::min(), -1, 0, 14, 100,
          std::numeric_limits<int>::max()}};
     for (const int id : badParamIds)
     {
@@ -903,6 +970,9 @@ bool readWriteJsonTest()
     params1.custom1 = static_cast<float>(randomInt(1000)) / 10.0f;
     params1.custom2 = static_cast<float>(randomInt(1000)) / 10.0f;
     params1.custom3 = static_cast<float>(randomInt(1000)) / 10.0f;
+    params1.custom4 = static_cast<float>(randomInt(1000)) / 10.0f;
+    params1.custom5 = static_cast<float>(randomInt(1000)) / 10.0f;
+    params1.custom6 = static_cast<float>(randomInt(1000)) / 10.0f;
 
     // Save to JSON. The file is removed when the test is finished.
     const FileRemover remover(JSON_FILE_NAME);
@@ -956,34 +1026,48 @@ bool readWriteJsonTest()
 /// changed.
 bool readInvalidJsonTest()
 {
-    const std::array<const char*, 14> documents{{
+    // Fields of a valid document after mode, level and type, without custom6.
+    const std::string middle{
+        ",\"palette\":1,\"numThreads\":2,\"backend\":3,\"custom1\":1.0,"
+        "\"custom2\":2.0,\"custom3\":3.0,\"custom4\":4.0,\"custom5\":5.0"};
+    // End of a valid document: custom6 and the closing brackets.
+    const std::string tail{middle + ",\"custom6\":6.0}}"};
+
+    // The valid document is accepted: each invalid document below differs
+    // from it by one defect only.
+    {
+        rapidpixel::ConfigReader reader;
+        VFilterParams valid;
+        if (!reader.readFromString(
+                    "{\"Params\":{\"mode\":1,\"level\":1.0,\"type\":2" +
+                    tail) ||
+            !reader.get(valid, "Params"))
+        {
+            return fail("Valid document is not accepted");
+        }
+    }
+
+    const std::array<std::string, 15> documents{{
         "",
         "not a json",
         "{\"Params\":{\"mode\":1,\"level\":",
         "{\"Other\":{}}",
         "{\"Params\":5}",
         "{\"Params\":[1,2,3]}",
-        "{\"Params\":{\"mode\":1,\"level\":1.0,\"custom1\":1.0,"
-        "\"custom2\":2.0,\"custom3\":3.0}}",
-        "{\"Params\":{\"mode\":\"1\",\"level\":1.0,\"type\":2,"
-        "\"custom1\":1.0,\"custom2\":2.0,\"custom3\":3.0}}",
-        "{\"Params\":{\"mode\":1,\"level\":\"x\",\"type\":2,"
-        "\"custom1\":1.0,\"custom2\":2.0,\"custom3\":3.0}}",
-        "{\"Params\":{\"mode\":null,\"level\":1.0,\"type\":2,"
-        "\"custom1\":1.0,\"custom2\":2.0,\"custom3\":3.0}}",
-        "{\"Params\":{\"mode\":1e30,\"level\":1.0,\"type\":2,"
-        "\"custom1\":1.0,\"custom2\":2.0,\"custom3\":3.0}}",
-        "{\"Params\":{\"mode\":4294967296,\"level\":1.0,\"type\":2,"
-        "\"custom1\":1.0,\"custom2\":2.0,\"custom3\":3.0}}",
-        "{\"Params\":{\"mode\":1,\"level\":true,\"type\":2,"
-        "\"custom1\":1.0,\"custom2\":2.0,\"custom3\":3.0}}",
-        "{\"Params\":{\"mode\":1,\"level\":1e400,\"type\":2,"
-        "\"custom1\":1.0,\"custom2\":2.0,\"custom3\":3.0}}"}};
+        "{\"Params\":{\"mode\":1,\"level\":1.0" + tail,
+        "{\"Params\":{\"mode\":1,\"level\":1.0,\"type\":2" + middle + "}}",
+        "{\"Params\":{\"mode\":\"1\",\"level\":1.0,\"type\":2" + tail,
+        "{\"Params\":{\"mode\":1,\"level\":\"x\",\"type\":2" + tail,
+        "{\"Params\":{\"mode\":null,\"level\":1.0,\"type\":2" + tail,
+        "{\"Params\":{\"mode\":1e30,\"level\":1.0,\"type\":2" + tail,
+        "{\"Params\":{\"mode\":4294967296,\"level\":1.0,\"type\":2" + tail,
+        "{\"Params\":{\"mode\":1,\"level\":true,\"type\":2" + tail,
+        "{\"Params\":{\"mode\":1,\"level\":1e400,\"type\":2" + tail}};
 
     VFilterParams object = randomParams();
     const VFilterParams before = object;
     bool result = true;
-    for (const char* document : documents)
+    for (const std::string& document : documents)
     {
         rapidpixel::ConfigReader reader;
         if (reader.readFromString(document) && reader.get(object, "Params"))

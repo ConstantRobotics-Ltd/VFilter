@@ -448,6 +448,12 @@ enum class VFilterParam
     PROCESSING_TIME_MCSEC,
     /// Type of the filter. Depends on the implementation.
     TYPE,
+    /// Color palette used by the filter. Depends on the implementation.
+    PALETTE,
+    /// Number of threads used by the filter. Depends on the implementation.
+    NUM_THREADS,
+    /// Backend used by the filter. Depends on the implementation.
+    BACKEND,
     /// VFilter custom parameter. Custom parameters used when particular image
     /// filter has specific unusual parameter.
     CUSTOM_1,
@@ -456,7 +462,16 @@ enum class VFilterParam
     CUSTOM_2,
     /// VFilter custom parameter. Custom parameters used when particular image
     /// filter has specific unusual parameter.
-    CUSTOM_3
+    CUSTOM_3,
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    CUSTOM_4,
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    CUSTOM_5,
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    CUSTOM_6
 };
 ```
 
@@ -468,9 +483,15 @@ enum class VFilterParam
 | LEVEL                 | read / write | Enhancement level for particular filter, as a percentage in range from 0% to 100%. Can have another meaning depends on implementation. The video filter should keep this value in memory. After enable video filter this value should be implemented. |
 | PROCESSING_TIME_MCSEC | read only    | Processing time, microseconds. Read only parameter. Used to control performance of video filter. |
 | TYPE                  | read / write | Type of the filter. Depends on the implementation.           |
+| PALETTE               | read / write | Color palette used by the filter. Depends on the implementation. |
+| NUM_THREADS           | read / write | Number of threads used by the filter. Depends on the implementation. |
+| BACKEND               | read / write | Backend used by the filter. Depends on the implementation.   |
 | CUSTOM_1              | read / write | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
 | CUSTOM_2              | read / write | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
 | CUSTOM_3              | read / write | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
+| CUSTOM_4              | read / write | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
+| CUSTOM_5              | read / write | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
+| CUSTOM_6              | read / write | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
 
 
 
@@ -496,6 +517,12 @@ public:
     int processingTimeMcSec{0};
     /// Type of the filter. Depends on the implementation.
     int type{0};
+    /// Color palette used by the filter. Depends on the implementation.
+    int palette{0};
+    /// Number of threads used by the filter. Depends on the implementation.
+    int numThreads{0};
+    /// Backend used by the filter. Depends on the implementation.
+    int backend{0};
     /// VFilter custom parameter. Custom parameters used when particular image
     /// filter has specific unusual parameter.
     float custom1{0.0f};
@@ -505,9 +532,18 @@ public:
     /// VFilter custom parameter. Custom parameters used when particular image
     /// filter has specific unusual parameter.
     float custom3{0.0f};
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    float custom4{0.0f};
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    float custom5{0.0f};
+    /// VFilter custom parameter. Custom parameters used when particular image
+    /// filter has specific unusual parameter.
+    float custom6{0.0f};
 
     /// Macro from ConfigReader to make params readable / writable from JSON.
-    JSON_READABLE(VFilterParams, mode, level, type, custom1, custom2, custom3)
+    JSON_READABLE(VFilterParams, mode, level, type, palette, numThreads, backend, custom1, custom2, custom3, custom4, custom5, custom6)
 
     /// Encode (serialize) params.
     bool encode(uint8_t* data, int bufferSize, int& size,
@@ -526,9 +562,15 @@ public:
 | level               | float | Enhancement level for particular filter, as a percentage in range from 0% to 100%. Can have another meaning depends on implementation. The video filter should keep this value in memory. After enable video filter this value should be implemented. |
 | processingTimeMcSec | int   | Processing time, microseconds. Read only parameter. Used to control performance of video filter. |
 | type                | int   | Type of the filter. Depends on the implementation.     |
+| palette             | int   | Color palette used by the filter. Depends on the implementation. |
+| numThreads          | int   | Number of threads used by the filter. Depends on the implementation. |
+| backend             | int   | Backend used by the filter. Depends on the implementation. |
 | custom1             | float | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
 | custom2             | float | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
 | custom3             | float | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
+| custom4             | float | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
+| custom5             | float | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
+| custom6             | float | VFilter custom parameter. Custom parameters used when particular video filter has specific unusual parameter. |
 
 **Note:** *VFilterParams class fields listed in Table 4 **have to** reflect params set/get by methods setParam(...) and getParam(...).*
 
@@ -536,7 +578,7 @@ public:
 
 ## Serialize VFilter params
 
-[VFilterParams](#vfilterparams-class-description) class provides method **encode(...)** to serialize VFilter params. Serialization of **VFilterParams** is necessary in case when video filter parameters have to be sent via communication channels. Method provides options to exclude particular parameters from serialization. To do this method inserts binary mask (1 byte) where each bit represents particular parameter and **decode(...)** method recognizes it. The encoded data has a header of 4 bytes: data type (0x02), major and minor version of the library (1 byte each) and the mask (1 byte). The header is followed by 4 bytes for each serialized parameter (int and float values in the byte order of the host) in the order: mode, level, processingTimeMcSec, type, custom1, custom2, custom3. The most significant bit of the mask belongs to mode, the least significant bit (0x01) is not used and is always 0. Method declaration:
+[VFilterParams](#vfilterparams-class-description) class provides method **encode(...)** to serialize VFilter params. Serialization of **VFilterParams** is necessary in case when video filter parameters have to be sent via communication channels. Method provides options to exclude particular parameters from serialization. To do this method inserts binary mask (2 bytes) where each bit represents particular parameter and **decode(...)** method recognizes it. The encoded data has a header of 5 bytes: data type (0x02), major and minor version of the library (1 byte each) and the mask (2 bytes, the most significant byte first independent of the byte order of the host). The header is followed by 4 bytes for each serialized parameter (int and float values in the byte order of the host) in the order: mode, level, processingTimeMcSec, type, palette, numThreads, backend, custom1, custom2, custom3, custom4, custom5, custom6. The most significant bit of the mask (0x8000) belongs to mode, the next bits belong to the next parameters in the same order, custom6 has the bit 0x0008. The 3 least significant bits (0x0007) are not used and are always 0. Method declaration:
 
 ```cpp
 bool encode(uint8_t* data, int bufferSize, int& size, VFilterParamsMask* mask = nullptr);
@@ -544,12 +586,12 @@ bool encode(uint8_t* data, int bufferSize, int& size, VFilterParamsMask* mask = 
 
 | Parameter  | Value                                                        |
 | ---------- | ------------------------------------------------------------ |
-| data       | Pointer to data buffer. Must not be nullptr. Buffer size must be >= 32 bytes. |
-| bufferSize | Data buffer size. Buffer size must be >= 32 bytes (size of the encoded params with all fields). |
+| data       | Pointer to data buffer. Must not be nullptr. Buffer size must be >= 57 bytes. |
+| bufferSize | Data buffer size. Buffer size must be >= 57 bytes (size of the encoded params with all fields). |
 | size       | Size of encoded data. Size will be 0 if the method fails.    |
 | mask       | Parameters mask - pointer to **VFilterParamsMask** structure. **VFilterParamsMask** (declared in **VFilter.h** file) determines flags for each field (parameter) declared in [VFilterParams class](#vfilterparams-class-description). If user wants to exclude any parameters from serialization, he can put a pointer to the mask. If the user wants to exclude a particular parameter from serialization, he should set the corresponding flag to false in the **VFilterParamsMask** structure. If the pointer is nullptr all parameters are serialized. |
 
-**Returns:** TRUE if params encoded (serialized) or FALSE if not (**data** is nullptr or buffer size < 32). If FALSE is returned nothing is written to the buffer.
+**Returns:** TRUE if params encoded (serialized) or FALSE if not (**data** is nullptr or buffer size < 57). If FALSE is returned nothing is written to the buffer.
 
 **VFilterParamsMask** structure declaration:
 
@@ -564,12 +606,24 @@ struct VFilterParamsMask
     bool processingTimeMcSec{true};
     /// Serialize type field.
     bool type{true};
+    /// Serialize palette field.
+    bool palette{true};
+    /// Serialize numThreads field.
+    bool numThreads{true};
+    /// Serialize backend field.
+    bool backend{true};
     /// Serialize custom1 field.
     bool custom1{true};
     /// Serialize custom2 field.
     bool custom2{true};
     /// Serialize custom3 field.
     bool custom3{true};
+    /// Serialize custom4 field.
+    bool custom4{true};
+    /// Serialize custom5 field.
+    bool custom5{true};
+    /// Serialize custom6 field.
+    bool custom6{true};
 };
 ```
 
@@ -616,7 +670,7 @@ if (!params.encode(buffer, bufferSize, size, &mask))
 
 ## Deserialize VFilter params
 
-[VFilterParams](#vfilterparams-class-description) class provides method **decode(...)** to deserialize params. Deserialization of **VFilterParams** is necessary in case when it is needed to receive params via communication channels. Method automatically recognizes which parameters were serialized by **encode(...)** method. The method checks the data type, the version (major and minor) and the size of the data: the size must be equal to the size defined by the mask in the data (4 bytes of the header and 4 bytes for each parameter selected by the mask). Parameters which are not in the data are set to 0. Values of the parameters are not checked against any range. Method declaration:
+[VFilterParams](#vfilterparams-class-description) class provides method **decode(...)** to deserialize params. Deserialization of **VFilterParams** is necessary in case when it is needed to receive params via communication channels. Method automatically recognizes which parameters were serialized by **encode(...)** method. The method checks the data type, the version (major and minor) and the size of the data: the size must be equal to the size defined by the mask in the data (5 bytes of the header and 4 bytes for each parameter selected by the mask). Parameters which are not in the data are set to 0. Values of the parameters are not checked against any range. Method declaration:
 
 ```cpp
 bool decode(uint8_t* data, int dataSize);
@@ -627,7 +681,7 @@ bool decode(uint8_t* data, int dataSize);
 | data      | Pointer to data buffer with serialized params. Must not be nullptr. The buffer must be valid for **dataSize** bytes. |
 | dataSize  | Size of serialized params, bytes.              |
 
-**Returns:** TRUE if params decoded (deserialized) or FALSE if not (**data** is nullptr, wrong data type, version or size, or the unused bit of the mask is set). If FALSE is returned the object is not changed.
+**Returns:** TRUE if params decoded (deserialized) or FALSE if not (**data** is nullptr, wrong data type, version or size, or an unused bit of the mask is set). If FALSE is returned the object is not changed.
 
 Example:
 
@@ -666,9 +720,15 @@ params1.mode = 1;
 params1.level = 10.5f;
 params1.processingTimeMcSec = 10;
 params1.type = 2;
+params1.palette = 1;
+params1.numThreads = 4;
+params1.backend = 0;
 params1.custom1 = 22.5f;
 params1.custom2 = 23.25f;
 params1.custom3 = 24.5f;
+params1.custom4 = 25.5f;
+params1.custom5 = 26.25f;
+params1.custom6 = 27.5f;
 
 // Save to JSON.
 rapidpixel::ConfigReader configReader1;
@@ -702,9 +762,15 @@ if (!configReader2.get(params2, "Params"))
         "mode": 1,
         "level": 10.5,
         "type": 2,
+        "palette": 1,
+        "numThreads": 4,
+        "backend": 0,
         "custom1": 22.5,
         "custom2": 23.25,
-        "custom3": 24.5
+        "custom3": 24.5,
+        "custom4": 25.5,
+        "custom5": 26.25,
+        "custom6": 27.5
     }
 }
 ```
