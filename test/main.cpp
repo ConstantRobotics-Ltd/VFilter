@@ -1,4 +1,5 @@
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
@@ -1162,13 +1163,14 @@ bool readJsonValuesTest()
         return fail("processingTimeMcSec is read from JSON");
     }
 
-    // A float value which is not finite is written as null: the document is
-    // not read back and the object is not changed.
+    // A float value which is not finite is written as null and read back as
+    // NaN, the other fields are read as written.
     const std::array<uint32_t, 3> notFinite{
         {0x7FC00000U, 0x7F800000U, 0xFF800000U}};
     for (const uint32_t bits : notFinite)
     {
         VFilterParams params3;
+        params3.level = 7.5f;
         params3.custom3 = floatOf(bits);
         rapidpixel::ConfigReader writer3;
         std::string text3;
@@ -1180,11 +1182,11 @@ bool readJsonValuesTest()
         }
         rapidpixel::ConfigReader reader3;
         VFilterParams object = randomParams();
-        const VFilterParams before = object;
-        if ((reader3.readFromString(text3) && reader3.get(object, "Params")) ||
-            !sameParams(object, before))
+        if (!reader3.readFromString(text3) || !reader3.get(object, "Params") ||
+            !std::isnan(object.custom3) || object.level != params3.level ||
+            object.custom2 != params3.custom2)
         {
-            return fail("Document with null value is read");
+            return fail("Value which is not finite is not read back as NaN");
         }
     }
 

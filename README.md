@@ -4,7 +4,7 @@
 
 # **VFilter C++ interface library**
 
-**v1.2.1**
+**v1.2.2**
 
 
 
@@ -68,6 +68,7 @@
 | 1.1.6   | 17.10.2026   | - Submodules removed: the Frame and ConfigReader repositories must be cloned next to the VFilter repository.<br />- decodeCommand(...) returns -1 for every error (a set param command of a wrong size was reported as an action command), checks the exact size of the command, the version, the data type and the ID range, and changes the output arguments only if the command is decoded.<br />- VFilterParams::decode(...) does not change the object if the data is rejected, rejects nullptr, data with extra bytes and data with the reserved bit of the mask set.<br />- VFilterParams::encode(...), encodeSetParamCommand(...) and encodeCommand(...) reject nullptr and set the output size to 0 on error.<br />- Encode and decode code is table driven, the encoded data is the same.<br />- Example: values from outside are validated, level is stored as float, read only parameter processingTimeMcSec can not be set, commands ON and OFF change the mode, all methods are thread-safe.<br />- Strict compiler warnings, exploit mitigation compiler and linker options, standard C++ only.<br />- Test application checks all methods and returns a non-zero exit code on errors.<br />- Documentation updated. |
 | 1.2.0   | 17.11.2026   | - Added parameters palette, numThreads, backend, custom4, custom5 and custom6.<br />- IDs of CUSTOM_1, CUSTOM_2 and CUSTOM_3 changed (8, 9 and 10 instead of 5, 6 and 7).<br />- The mask of the encoded params has 2 bytes: the size of the encoded params with all fields is 57 bytes, the buffer for VFilterParams::encode(...) must be >= 57 bytes.<br />- JSON files must include the new parameters: a file of the previous version is not read.<br />- The encoded params and commands are not compatible with the previous versions (the version in the data is checked).<br />- Documentation updated. |
 | 1.2.1   | 21.11.2026   | - Example: setParam(...) rejects a value with a fractional part for an int parameter, processFrame(...) checks the frame if the filter is enabled, setMask(...) rejects a mask with less than width * height bytes of data.<br />- Test application checks the encoding with every mask and the conversions of JSON values described in the documentation.<br />- Hardening flags of the CMake files are checked with -Werror: a flag which the compiler does not use for the target is not added (the build with Clang 15 for AArch64 stopped with an error for -fstack-clash-protection).<br />- Documentation updated. |
+| 1.2.2   | 21.11.2026   | - Documentation and test application: a float value which is not finite is read back from JSON as NaN. |
 
 
 
@@ -194,7 +195,7 @@ std::cout << "VFilter version: " << rapidpixel::VFilter::getVersion();
 Console output:
 
 ```bash
-VFilter version: 1.2.1
+VFilter version: 1.2.2
 ```
 
 
@@ -719,7 +720,7 @@ if (!params2.decode(buffer, size))
 
 ## Read params from JSON file and write to JSON file
 
-**VFilter** depends on the [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides method to read params from JSON file and to write params to JSON file. The **readFromFile(...)** method returns false if the file does not exist or is not valid JSON. The **get(...)** method returns false and does not change the object if a parameter is missing or a parameter has a wrong type or a value out of range of the field (for example a string, null or an object instead of a number). A real number in JSON is truncated toward zero if the field is int, and true / false are read as 1 / 0 for an int field. The read only field **processingTimeMcSec** is not written to JSON and is not read from JSON: after **get(...)** it has the default value 0. A float value which is not finite (NaN or infinity) is written as null, so the params can not be read back from such a file (**get(...)** returns false). Example of writing and reading params to JSON file:
+**VFilter** depends on the [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides method to read params from JSON file and to write params to JSON file. The **readFromFile(...)** method returns false if the file does not exist or is not valid JSON. The **get(...)** method returns false and does not change the object if a parameter is missing or a parameter has a wrong type or a value out of range of the field (for example a string, null or an object instead of a number). A real number in JSON is truncated toward zero if the field is int, and true / false are read as 1 / 0 for an int field. The read only field **processingTimeMcSec** is not written to JSON and is not read from JSON: after **get(...)** it has the default value 0. A float value which is not finite (NaN or infinity) is written as null and read back as NaN. Example of writing and reading params to JSON file:
 
 ```cpp
 // Prepare params.
