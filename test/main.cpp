@@ -31,8 +31,12 @@ constexpr int PARAMS_HEADER_SIZE{5};
 /// Position of the mask (2 bytes, most significant byte first) in the encoded
 /// params.
 constexpr int PARAMS_MASK_POS{3};
+/// Number of the bits of the mask.
+constexpr int MASK_BITS_NUMBER{16};
 /// Number of the mask values: the mask has 16 bits.
-constexpr int MASK_VALUES_NUMBER{0x10000};
+constexpr int MASK_VALUES_NUMBER{1 << MASK_BITS_NUMBER};
+/// Number of the combinations of the fields which the mask can select.
+constexpr int FIELD_MASKS_NUMBER{1 << FIELDS_NUMBER};
 /// Bits of the mask which do not belong to any field.
 constexpr int RESERVED_MASK_BITS{0x0007};
 /// Size of the encoded action command, bytes.
@@ -461,13 +465,18 @@ bool encodeDecodeTestWithoutMask()
 
 
 
-/// Encode and decode with random masks: size, mask and fields.
+/// Encode and decode with every mask and with random masks: size, mask and
+/// fields.
 bool encodeDecodeTestWithMask()
 {
-    for (int i = 0; i < RANDOM_MASKS_NUMBER; ++i)
+    for (int i = 0; i < FIELD_MASKS_NUMBER + RANDOM_MASKS_NUMBER; ++i)
     {
+        // Every combination of the fields first, then random masks. The
+        // first field has the bit 0x8000, the last field has the bit 0x0008.
         VFilterParams params1 = randomParams();
-        VFilterParamsMask mask = randomMask();
+        VFilterParamsMask mask = i < FIELD_MASKS_NUMBER
+                ? maskOf(i << (MASK_BITS_NUMBER - FIELDS_NUMBER))
+                : randomMask();
         std::array<uint8_t, BUFFER_SIZE> buffer;
         fillCanary(buffer);
         int size = 0;
@@ -1047,7 +1056,7 @@ bool readInvalidJsonTest()
         }
     }
 
-    const std::array<std::string, 15> documents{{
+    const std::array<std::string, 17> documents{{
         "",
         "not a json",
         "{\"Params\":{\"mode\":1,\"level\":",
@@ -1059,6 +1068,8 @@ bool readInvalidJsonTest()
         "{\"Params\":{\"mode\":\"1\",\"level\":1.0,\"type\":2" + tail,
         "{\"Params\":{\"mode\":1,\"level\":\"x\",\"type\":2" + tail,
         "{\"Params\":{\"mode\":null,\"level\":1.0,\"type\":2" + tail,
+        "{\"Params\":{\"mode\":{},\"level\":1.0,\"type\":2" + tail,
+        "{\"Params\":{\"mode\":[1],\"level\":1.0,\"type\":2" + tail,
         "{\"Params\":{\"mode\":1e30,\"level\":1.0,\"type\":2" + tail,
         "{\"Params\":{\"mode\":4294967296,\"level\":1.0,\"type\":2" + tail,
         "{\"Params\":{\"mode\":1,\"level\":true,\"type\":2" + tail,
@@ -1094,6 +1105,91 @@ bool readInvalidJsonTest()
 
     return result;
 }
+
+
+
+/// Conversions of JSON values which the documentation of the library
+/// describes: a real number for an int field, true and false for an int
+/// field, the read only field processingTimeMcSec and values which are not
+/// finite.
+bool readJsonValuesTest()
+{
+    // Fields of a valid document after mode and level.
+    const std::string tail{
+        ",\"type\":2,\"palette\":1,\"numThreads\":2,\"backend\":3,"
+        "\"custom1\":1.0,\"custom2\":2.0,\"custom3\":3.0,\"custom4\":4.0,"
+        "\"custom5\":5.0,\"custom6\":6.0}}"};
+
+    // A real number is truncated toward zero if the field is int, true and
+    // false are read as 1 and 0.
+    const std::array<std::pair<std::string, int>, 5> modes{{
+        {"1.7", 1}, {"-1.7", -1}, {"0.9999", 0}, {"true", 1}, {"false", 0}}};
+    for (const auto& mode : modes)
+    {
+        rapidpixel::ConfigReader reader;
+        VFilterParams params;
+        if (!reader.readFromString("{\"Params\":{\"mode\":" + mode.first +
+                                   ",\"level\":1.5" + tail) ||
+            !reader.get(params, "Params") || params.mode != mode.second)
+        {
+            std::cout << "Wrong mode for JSON value " << mode.first
+                      << std::endl;
+            return false;
+        }
+    }
+
+    // The read only field processingTimeMcSec is not written to JSON and is
+    // not read from JSON: it has the default value 0 after reading.
+    VFilterParams params1;
+    params1.processingTimeMcSec = 55;
+    rapidpixel::ConfigReader writer;
+    std::string text;
+    if (!writer.set(params1, "Params") || !writer.writeToString(text))
+    {
+        return fail("Can't write params to string");
+    }
+    if (text.find("processingTimeMcSec") != std::string::npos)
+    {
+        return fail("processingTimeMcSec is written to JSON");
+    }
+    rapidpixel::ConfigReader reader;
+    VFilterParams params2;
+    params2.processingTimeMcSec = 77;
+    if (!reader.readFromString("{\"Params\":{\"mode\":1,\"level\":1.5,"
+                               "\"processingTimeMcSec\":9" + tail) ||
+        !reader.get(params2, "Params") || params2.processingTimeMcSec != 0)
+    {
+        return fail("processingTimeMcSec is read from JSON");
+    }
+
+    // A float value which is not finite is written as null: the document is
+    // not read back and the object is not changed.
+    const std::array<uint32_t, 3> notFinite{
+        {0x7FC00000U, 0x7F800000U, 0xFF800000U}};
+    for (const uint32_t bits : notFinite)
+    {
+        VFilterParams params3;
+        params3.custom3 = floatOf(bits);
+        rapidpixel::ConfigReader writer3;
+        std::string text3;
+        if (!writer3.set(params3, "Params") ||
+            !writer3.writeToString(text3) ||
+            text3.find("\"custom3\":null") == std::string::npos)
+        {
+            return fail("Value which is not finite is not written as null");
+        }
+        rapidpixel::ConfigReader reader3;
+        VFilterParams object = randomParams();
+        const VFilterParams before = object;
+        if ((reader3.readFromString(text3) && reader3.get(object, "Params")) ||
+            !sameParams(object, before))
+        {
+            return fail("Document with null value is read");
+        }
+    }
+
+    return true;
+}
 }
 
 
@@ -1119,6 +1215,7 @@ int main()
     passed = runTest("Version test", versionTest) && passed;
     passed = runTest("Read/Write JSON test", readWriteJsonTest) && passed;
     passed = runTest("Read invalid JSON test", readInvalidJsonTest) && passed;
+    passed = runTest("Read JSON values test", readJsonValuesTest) && passed;
 
     std::cout << (passed && !g_fileRemoveFailed ? "All tests passed"
                                                 : "Tests failed")

@@ -4,7 +4,7 @@
 
 # **VFilter C++ interface library**
 
-**v1.2.0**
+**v1.2.1**
 
 
 
@@ -46,7 +46,7 @@
 
 # Overview
 
-**VFilter** C++ library provides interface as well defines data structures for various video filters implementations. The **VFilter** interface represents video filter module which has video frames as input and output. The **VFilter.h** file contains declaration of data structures: [VFilterCommand](#vfiltercommand-enum) enum, [VFilterParam](#vfilterparam-enum) enum, [VFilterParams](#vfilterparams-class-declaration) class and [VFilter](#vfilter-interface-class-declaration) class declaration. The library depends on [Frame](https://rapidpixel.constantrobotics.com/docs/Service/Frame.html) library (describes data structures for video frames) and [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library (provides methods to read/write JSON config files). The repository does not contain these libraries: their folders must be copied next to the **VFilter** repository (see [Build and connect to your project](#build-and-connect-to-your-project) section). The library uses C++17 standard, compatible with Linux and Windows and doesn't have third-party dependencies to be installed in OS.
+**VFilter** C++ library provides an interface and defines data structures for various video filter implementations. The **VFilter** interface represents video filter module which has video frames as input and output. The **VFilter.h** file contains declaration of data structures: [VFilterCommand](#vfiltercommand-enum) enum, [VFilterParam](#vfilterparam-enum) enum, [VFilterParams](#vfilterparams-class-declaration) class and [VFilter](#vfilter-interface-class-declaration) class declaration. The library depends on [Frame](https://rapidpixel.constantrobotics.com/docs/Service/Frame.html) library (describes data structures for video frames) and [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library (provides methods to read/write JSON config files). The repository does not contain these libraries: their folders must be copied next to the **VFilter** repository (see [Build and connect to your project](#build-and-connect-to-your-project) section). The library uses C++17 standard, compatible with Linux and Windows and doesn't have third-party dependencies to be installed in OS.
 
 **VFilter** is general-purpose software: it is not tied to any sector or application, and the developer of a program decides what the program does with it.
 
@@ -67,12 +67,13 @@
 | 1.1.5   | 28.09.2026   | - Submodules updated.<br />- Added build flags.              |
 | 1.1.6   | 17.10.2026   | - Submodules removed: the Frame and ConfigReader repositories must be cloned next to the VFilter repository.<br />- decodeCommand(...) returns -1 for every error (a set param command of a wrong size was reported as an action command), checks the exact size of the command, the version, the data type and the ID range, and changes the output arguments only if the command is decoded.<br />- VFilterParams::decode(...) does not change the object if the data is rejected, rejects nullptr, data with extra bytes and data with the reserved bit of the mask set.<br />- VFilterParams::encode(...), encodeSetParamCommand(...) and encodeCommand(...) reject nullptr and set the output size to 0 on error.<br />- Encode and decode code is table driven, the encoded data is the same.<br />- Example: values from outside are validated, level is stored as float, read only parameter processingTimeMcSec can not be set, commands ON and OFF change the mode, all methods are thread-safe.<br />- Strict compiler warnings, exploit mitigation compiler and linker options, standard C++ only.<br />- Test application checks all methods and returns a non-zero exit code on errors.<br />- Documentation updated. |
 | 1.2.0   | 17.11.2026   | - Added parameters palette, numThreads, backend, custom4, custom5 and custom6.<br />- IDs of CUSTOM_1, CUSTOM_2 and CUSTOM_3 changed (8, 9 and 10 instead of 5, 6 and 7).<br />- The mask of the encoded params has 2 bytes: the size of the encoded params with all fields is 57 bytes, the buffer for VFilterParams::encode(...) must be >= 57 bytes.<br />- JSON files must include the new parameters: a file of the previous version is not read.<br />- The encoded params and commands are not compatible with the previous versions (the version in the data is checked).<br />- Documentation updated. |
+| 1.2.1   | 21.11.2026   | - Example: setParam(...) rejects a value with a fractional part for an int parameter, processFrame(...) checks the frame if the filter is enabled, setMask(...) rejects a mask with less than width * height bytes of data.<br />- Test application checks the encoding with every mask and the conversions of JSON values described in the documentation.<br />- Hardening flags of the CMake files are checked with -Werror: a flag which the compiler does not use for the target is not added (the build with Clang 15 for AArch64 stopped with an error for -fstack-clash-protection).<br />- Documentation updated. |
 
 
 
 # Library files
 
-The library supplied by source code only. The user would be given a set of files in the form of a CMake project (repository). The repository structure is shown below:
+The library is supplied as source code only. The user would be given a set of files in the form of a CMake project (repository). The repository structure is shown below:
 
 ```xml
 CMakeLists.txt ----------------- Main CMake file of the library.
@@ -193,7 +194,7 @@ std::cout << "VFilter version: " << rapidpixel::VFilter::getVersion();
 Console output:
 
 ```bash
-VFilter version: 1.2.0
+VFilter version: 1.2.1
 ```
 
 
@@ -243,7 +244,7 @@ virtual float getParam(VFilterParam id) = 0;
 | --------- | ------------------------------------------------------------ |
 | id        | Parameter ID according to [VFilterParam](#vfilterparam-enum) enum. |
 
-**Returns:** parameter value or **-1** if the parameters doesn't exist (not supported in particular implementation).
+**Returns:** parameter value or **-1** if the parameter doesn't exist (not supported in particular implementation).
 
 
 
@@ -271,7 +272,7 @@ virtual bool executeCommand(VFilterCommand id) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| id        | Command  ID according to [VFilterCommand](#vfiltercommand-enum) enum. |
+| id        | Command ID according to [VFilterCommand](#vfiltercommand-enum) enum. |
 
 **Returns:** TRUE if the command executed or FALSE if not.
 
@@ -279,7 +280,7 @@ virtual bool executeCommand(VFilterCommand id) = 0;
 
 ## processFrame method
 
-The **processFrame(...)** method designed to process frame. **VFilter** based library should provide thread-safe **processFrame(...)** method call. This means that the **processFrame(...)** method can be safely called from any thread. Method declaration:
+The **processFrame(...)** method is designed to process frame. **VFilter** based library should provide thread-safe **processFrame(...)** method call. This means that the **processFrame(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual bool processFrame(rapidpixel::Frame& frame) = 0;
@@ -295,7 +296,7 @@ virtual bool processFrame(rapidpixel::Frame& frame) = 0;
 
 ## setMask method
 
-The **setMask(...)** method designed to set video filter mask. The thread safety of the method is defined by the implementation. Method declaration:
+The **setMask(...)** method is designed to set video filter mask. The thread safety of the method is defined by the implementation. The mask is passed by value: the caller makes the copy, and the copy constructor of the **Frame** class throws **std::bad_alloc** if the memory can not be allocated. Method declaration:
 
 ```c++
 virtual bool setMask(rapidpixel::Frame mask) = 0;
@@ -311,7 +312,7 @@ virtual bool setMask(rapidpixel::Frame mask) = 0;
 
 ## encodeSetParamCommand method
 
-The **encodeSetParamCommand(...)** static method encodes command to change any **VFilter** parameter value remote. To control any video filter remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **VFilter** class contains static methods for encoding the control command. The **VFilter** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeSetParamCommand(...)** designed to encode SET_PARAM command. Method declaration:
+The **encodeSetParamCommand(...)** static method encodes command to change any **VFilter** parameter value remotely. To control any video filter remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **VFilter** class contains static methods for encoding the control command. The **VFilter** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeSetParamCommand(...)** is designed to encode SET_PARAM command. Method declaration:
 
 ```cpp
 static void encodeSetParamCommand(uint8_t* data, int& size, VFilterParam id, float value);
@@ -324,7 +325,7 @@ static void encodeSetParamCommand(uint8_t* data, int& size, VFilterParam id, flo
 | id        | Parameter ID according to [VFilterParam](#vfilterparam-enum) enum. The ID is not checked by the method: [decodeCommand(...)](#decodecommand-method) rejects an ID which is not in the enum. |
 | value     | Parameter value. The value is not checked: its meaning belongs to the video filter implementation. |
 
-The encoded command has 11 bytes: data type (1 byte, 0x01), major and minor version of the library (1 byte each), parameter ID (4 bytes) and parameter value (4 bytes). Integer and float values are stored in the byte order of the host. **encodeSetParamCommand(...)** is static, thread-safe and can be used without **VFilter** class instance. This method used on client side (control system). Command encoding example:
+The encoded command has 11 bytes: data type (1 byte, 0x01), major and minor version of the library (1 byte each), parameter ID (4 bytes) and parameter value (4 bytes). Integer and float values are stored in the byte order of the host. **encodeSetParamCommand(...)** is static, thread-safe and can be used without **VFilter** class instance. This method is used on client side (control system). Command encoding example:
 
 ```cpp
 // Buffer for encoded data.
@@ -342,7 +343,7 @@ rapidpixel::VFilter::encodeSetParamCommand(
 
 ## encodeCommand method
 
-The **encodeCommand(...)** static method encodes action command for **VFilter** remote control. To control any video filter remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **VFilter** class contains static methods for encoding the control command. The **VFilter** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeCommand(...)** designed to encode COMMAND (action command). Method declaration:
+The **encodeCommand(...)** static method encodes action command for **VFilter** remote control. To control any video filter remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **VFilter** class contains static methods for encoding the control command. The **VFilter** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeCommand(...)** is designed to encode COMMAND (action command). Method declaration:
 
 ```cpp
 static void encodeCommand(uint8_t* data, int& size, VFilterCommand id);
@@ -354,7 +355,7 @@ static void encodeCommand(uint8_t* data, int& size, VFilterCommand id);
 | size      | Size of encoded data. Size will be 7 bytes. Size will be 0 (nothing is written) if **data** is nullptr. |
 | id        | Command ID according to [VFilterCommand](#vfiltercommand-enum) enum. The ID is not checked by the method: [decodeCommand(...)](#decodecommand-method) rejects an ID which is not in the enum. |
 
-The encoded command has 7 bytes: data type (1 byte, 0x00), major and minor version of the library (1 byte each) and command ID (4 bytes, byte order of the host). **encodeCommand(...)** is static, thread-safe and can be used without **VFilter** class instance. This method used on client side (control system). Command encoding example:
+The encoded command has 7 bytes: data type (1 byte, 0x00), major and minor version of the library (1 byte each) and command ID (4 bytes, byte order of the host). **encodeCommand(...)** is static, thread-safe and can be used without **VFilter** class instance. This method is used on client side (control system). Command encoding example:
 
 ```cpp
 // Buffer for encoded data.
@@ -546,7 +547,11 @@ public:
     float custom6{0.0f};
 
     /// Macro from ConfigReader to make params readable / writable from JSON.
-    JSON_READABLE(VFilterParams, mode, level, type, palette, numThreads, backend, custom1, custom2, custom3, custom4, custom5, custom6)
+    /// The read only field processingTimeMcSec is not written to JSON and is
+    /// not read from JSON.
+    JSON_READABLE(VFilterParams, mode, level, type, palette, numThreads,
+                  backend, custom1, custom2, custom3, custom4, custom5,
+                  custom6)
 
     /// Encode (serialize) params.
     bool encode(uint8_t* data, int bufferSize, int& size,
@@ -714,7 +719,7 @@ if (!params2.decode(buffer, size))
 
 ## Read params from JSON file and write to JSON file
 
-**VFilter** depends on the [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides method to read params from JSON file and to write params to JSON file. The **readFromFile(...)** method returns false if the file does not exist or is not valid JSON. The **get(...)** method returns false and does not change the object if a parameter is missing or a parameter has a wrong type or a value out of range of the field (for example a string instead of a number). A real number in JSON is truncated if the field is int. Example of writing and reading params to JSON file:
+**VFilter** depends on the [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides method to read params from JSON file and to write params to JSON file. The **readFromFile(...)** method returns false if the file does not exist or is not valid JSON. The **get(...)** method returns false and does not change the object if a parameter is missing or a parameter has a wrong type or a value out of range of the field (for example a string, null or an object instead of a number). A real number in JSON is truncated toward zero if the field is int, and true / false are read as 1 / 0 for an int field. The read only field **processingTimeMcSec** is not written to JSON and is not read from JSON: after **get(...)** it has the default value 0. A float value which is not finite (NaN or infinity) is written as null, so the params can not be read back from such a file (**get(...)** returns false). Example of writing and reading params to JSON file:
 
 ```cpp
 // Prepare params.
@@ -825,12 +830,12 @@ On Windows use `cmake --build . --config Release` instead of `make`. If **VFilte
 
 ## Connect to your project
 
-If you want to connect **VFilter** to your CMake project as source code you can make follow. For example, if your repository has structure:
+If you want to connect **VFilter** to your CMake project as source code you can do the following. For example, if your repository has structure:
 
 ```bash
 CMakeLists.txt
 src
-    CMakeList.txt
+    CMakeLists.txt
     yourLib.h
     yourLib.cpp
 ```
@@ -840,7 +845,7 @@ Create folder **3rdparty** in your repository and copy the folders of the librar
 ```bash
 CMakeLists.txt
 src
-    CMakeList.txt
+    CMakeLists.txt
     yourLib.h
     yourLib.cpp
 3rdparty
@@ -912,12 +917,12 @@ if (${PARENT}_SUBMODULE_VFILTER)
 endif()
 ```
 
-File **3rdparty/CMakeLists.txt** adds folders **Frame**, **ConfigReader** and **VFilter** to your project and excludes test applications and examples (**VFilter** class test application and example of custom **VFilter** class implementation) from compiling (by default example and test application excluded from compiling if **VFilter** included as sub-repository). The structure of your repository will be:
+File **3rdparty/CMakeLists.txt** adds folders **Frame**, **ConfigReader** and **VFilter** to your project and excludes test applications and examples (**VFilter** class test application and example of custom **VFilter** class implementation) from compiling (by default example and test application are excluded from compiling if **VFilter** is included as sub-repository). The structure of your repository will be:
 
 ```bash
 CMakeLists.txt
 src
-    CMakeList.txt
+    CMakeLists.txt
     yourLib.h
     yourLib.cpp
 3rdparty
@@ -927,7 +932,7 @@ src
     ConfigReader
 ```
 
-Next you need include folder 3rdparty in main **CMakeLists.txt** file of your repository. Add string at the end of your main **CMakeLists.txt**:
+Next you need to include the folder 3rdparty in the main **CMakeLists.txt** file of your repository. Add the line at the end of your main **CMakeLists.txt**:
 
 ```cmake
 add_subdirectory(3rdparty)
@@ -951,7 +956,7 @@ The serialized data (encoded params and commands) stores int and float values as
 
 # How to make custom implementation
 
-The **VFilter** class provides only an interface, data structures, and methods for encoding and decoding commands and params. To create your own implementation of the video filter, VFilter repository has to be included in your project (see [Build and connect to your project](#build-and-connect-to-your-project) section). The catalogue **example** (see [Library files](#library-files) section) includes an example of the design of the custom VFilter algorithm. All the methods of the VFilter interface class have to be included. Custom VFilter class declaration:
+The **VFilter** class provides only an interface, data structures, and methods for encoding and decoding commands and params. To create your own implementation of the video filter, VFilter repository has to be included in your project (see [Build and connect to your project](#build-and-connect-to-your-project) section). The folder **example** (see [Library files](#library-files) section) includes an example of the design of the custom VFilter algorithm. All the methods of the VFilter interface class have to be implemented. Custom VFilter class declaration:
 
 ```cpp
 namespace rapidpixel
@@ -1017,8 +1022,10 @@ public:
 
     /**
      * @brief Set the value for a specific library parameter. The method
-     * checks the value according to the parameter ID (see initVFilter(...)).
-     * The processing time is read only.
+     * checks the value according to the parameter ID (see initVFilter(...)):
+     * the value of an int parameter (mode, type, palette, numThreads and
+     * backend) must be an integer number in the range of int. The processing
+     * time is read only.
      * @param id The identifier of the library parameter.
      * @param value The value to set for the parameter.
      * @return TRUE if the parameter was successfully set, FALSE otherwise.
@@ -1048,17 +1055,20 @@ public:
     bool executeCommand(VFilterCommand id) override;
 
     /**
-     * @brief Process frame. The example does not change the frame.
+     * @brief Process frame. The example does not change the frame. If the
+     * filter is disabled (mode 0) the method returns TRUE without checking
+     * the frame.
      * @param frame Source video frame.
-     * @return TRUE if video frame was processed or FALSE if not.
+     * @return TRUE if video frame was processed or FALSE if not (the frame
+     * has no data, or the width, the height or the size is not positive).
      */
     bool processFrame(rapidpixel::Frame& frame) override;
 
     /**
      * @brief Set filter mask. Filter omits image segments, where
      * filter mask pixel values equal 0.
-     * @param mask Filter binary mask. Must have data and one of the pixel
-     * formats: GRAY, NV12, NV21, YV12 or YU12.
+     * @param mask Filter binary mask. Must have data of width * height bytes
+     * at least and one of the pixel formats: GRAY, NV12, NV21, YV12 or YU12.
      * @return TRUE if video filter mask was set or FALSE if not (the mask is
      * not valid or the memory can not be allocated).
      */

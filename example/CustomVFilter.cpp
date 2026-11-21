@@ -30,10 +30,13 @@ constexpr float NO_PARAM_VALUE{-1.0f};
 
 
 /// Convert float param value to int. A conversion of NaN or of a value outside
-/// of the int range is undefined behavior, so such values are rejected.
+/// of the int range is undefined behavior, so such values are rejected. A
+/// value with a fractional part is not a valid value of an int param, so it
+/// is rejected too.
 bool toInt(float value, int& result)
 {
-    if (!(value >= -INT_RANGE_LIMIT && value < INT_RANGE_LIMIT))
+    if (!(value >= -INT_RANGE_LIMIT && value < INT_RANGE_LIMIT) ||
+        std::trunc(value) != value)
     {
         return false;
     }
@@ -73,12 +76,21 @@ bool areParamsValid(const rapidpixel::VFilterParams& params)
 
 
 
-/// Check that the frame can be used as the filter mask: the frame has data and
-/// has a pixel format supported for the mask.
+/// Check that the frame can be used as the filter mask: the frame has data,
+/// the data has one byte for each pixel at least (the mask values are the
+/// bytes of the GRAY image or of the Y plane of the YUV formats) and the pixel
+/// format is supported for the mask.
 bool isMaskValid(const rapidpixel::Frame& mask)
 {
     if (mask.data == nullptr || mask.width <= 0 || mask.height <= 0 ||
         mask.size <= 0)
+    {
+        return false;
+    }
+    // A filter reads width * height bytes of the mask: a smaller size would
+    // lead to a read outside of the data. The product is computed with 64
+    // bits: it can be larger than the int range.
+    if (static_cast<int64_t>(mask.width) * mask.height > mask.size)
     {
         return false;
     }
@@ -386,11 +398,29 @@ bool rapidpixel::CustomVFilter::executeCommand(VFilterCommand id)
 
 
 
-bool rapidpixel::CustomVFilter::processFrame(rapidpixel::Frame&)
+bool rapidpixel::CustomVFilter::processFrame(rapidpixel::Frame& frame)
 {
-    // A real filter processes the frame here according to the mode and the
-    // level and returns TRUE without processing if the filter is disabled.
-    // The example does not change the frame.
+    // Lock mutex for reading parameters.
+    const std::lock_guard<std::mutex> lock(m_paramsMutex);
+
+    // A disabled filter does not process the frame.
+    if (m_params.mode == MODE_OFF)
+    {
+        return true;
+    }
+
+    // Check the frame before the pixels are used. A real filter also checks
+    // that the pixel format is supported and that the size of the data is
+    // the size of the pixel format for the width and the height.
+    if (frame.data == nullptr || frame.width <= 0 || frame.height <= 0 ||
+        frame.size <= 0)
+    {
+        return false;
+    }
+
+    // A real filter processes the frame here according to the level and
+    // keeps the width, the height, sourceId and frameId of the frame. The
+    // example does not change the frame.
     return true;
 }
 

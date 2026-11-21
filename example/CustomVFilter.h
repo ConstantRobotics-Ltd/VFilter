@@ -69,8 +69,10 @@ public:
 
     /**
      * @brief Set the value for a specific library parameter. The method
-     * checks the value according to the parameter ID (see initVFilter(...)).
-     * The processing time is read only.
+     * checks the value according to the parameter ID (see initVFilter(...)):
+     * the value of an int parameter (mode, type, palette, numThreads and
+     * backend) must be an integer number in the range of int. The processing
+     * time is read only.
      * @param id The identifier of the library parameter.
      * @param value The value to set for the parameter.
      * @return TRUE if the parameter was successfully set, FALSE otherwise.
@@ -100,17 +102,20 @@ public:
     bool executeCommand(VFilterCommand id) override;
 
     /**
-     * @brief Process frame. The example does not change the frame.
+     * @brief Process frame. The example does not change the frame. If the
+     * filter is disabled (mode 0) the method returns TRUE without checking
+     * the frame.
      * @param frame Source video frame.
-     * @return TRUE if video frame was processed or FALSE if not.
+     * @return TRUE if video frame was processed or FALSE if not (the frame
+     * has no data, or the width, the height or the size is not positive).
      */
     bool processFrame(rapidpixel::Frame& frame) override;
 
     /**
      * @brief Set filter mask. Filter omits image segments, where
      * filter mask pixel values equal 0.
-     * @param mask Filter binary mask. Must have data and one of the pixel
-     * formats: GRAY, NV12, NV21, YV12 or YU12.
+     * @param mask Filter binary mask. Must have data of width * height bytes
+     * at least and one of the pixel formats: GRAY, NV12, NV21, YV12 or YU12.
      * @return TRUE if video filter mask was set or FALSE if not (the mask is
      * not valid or the memory can not be allocated).
      */

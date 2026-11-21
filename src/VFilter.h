@@ -95,7 +95,11 @@ public:
     float custom6{0.0f};
 
     /// Macro from ConfigReader to make params readable / writable from JSON.
-    JSON_READABLE(VFilterParams, mode, level, type, palette, numThreads, backend, custom1, custom2, custom3, custom4, custom5, custom6)
+    /// The read only field processingTimeMcSec is not written to JSON and is
+    /// not read from JSON.
+    JSON_READABLE(VFilterParams, mode, level, type, palette, numThreads,
+                  backend, custom1, custom2, custom3, custom4, custom5,
+                  custom6)
 
     /**
      * @brief Encode (serialize) params.
@@ -281,7 +285,10 @@ public:
 
     /**
      * @brief Set mask for filter.
-     * @note Thread safety is defined by the implementation.
+     * @note Thread safety is defined by the implementation. The mask is
+     * passed by value: the caller makes the copy, and the copy constructor of
+     * the Frame class throws std::bad_alloc if the memory can not be
+     * allocated.
      * @param mask Filter binary mask. Frame object. The filter must
      * support pixel formats for mask: GRAY, NV12, NV21, YV12 and YU12.
      * @return TRUE if mask was set or FALSE if not.
@@ -345,9 +352,14 @@ public:
 
     /**
      * @brief Decode and execute command.
+     *
+     * The implementation should decode the command with decodeCommand(...),
+     * which checks the pointer, the size, the version, the data type and the
+     * ID.
+     *
      * @note The implementation must be thread-safe.
      * @param data Pointer to command data.
-     * @param size Size of data.
+     * @param size Size of data, bytes.
      * @return TRUE if command decoded and executed or FALSE if not.
      */
     virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
