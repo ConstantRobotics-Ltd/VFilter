@@ -48,6 +48,7 @@ endif()
 target_link_libraries(${PROJECT_NAME} VFilter)
 
 include(CheckCXXCompilerFlag)
+include(CMakePushCheckState)
 if(MSVC)
     # All warnings (as errors), standard conformance, security checks, stack
     # cookies and control flow guard
@@ -73,16 +74,25 @@ else()
         # compiler supports them for the target
         set(HARDENING_FLAGS -fstack-clash-protection -fcf-protection=full)
         if(CMAKE_SYSTEM_PROCESSOR MATCHES "^([Aa][Aa][Rr][Cc][Hh]64|[Aa][Rr][Mm])")
-            # Clang on x86 accepts this option in the check but warns on every use
+            # Branch protection is an option of ARM targets only
             list(APPEND HARDENING_FLAGS -mbranch-protection=standard)
         endif()
+        # The check uses -Werror: a flag that the compiler accepts for the
+        # target with a warning only (for example, -fstack-clash-protection of
+        # Clang 15 for AArch64) is left out. Own cache variables: other
+        # projects of the build check the same flags without -Werror. The
+        # check flags of the parent project are kept and restored after the
+        # check.
+        cmake_push_check_state()
+        string(APPEND CMAKE_REQUIRED_FLAGS " -Werror")
         foreach(FLAG ${HARDENING_FLAGS})
-            string(MAKE_C_IDENTIFIER "HAS${FLAG}" FLAG_VAR)
+            string(MAKE_C_IDENTIFIER "VFILTER_HAS${FLAG}" FLAG_VAR)
             check_cxx_compiler_flag(${FLAG} ${FLAG_VAR})
             if(${FLAG_VAR})
                 target_compile_options(${PROJECT_NAME} PRIVATE ${FLAG})
             endif()
         endforeach()
+        cmake_pop_check_state()
     endif()
     if(UNIX AND NOT APPLE)
         # Full RELRO and non-executable stack for an executable
